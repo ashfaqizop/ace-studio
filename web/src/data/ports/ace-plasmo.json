@@ -14,6 +14,7 @@
   },
   "portedBy": "claude/forge",
   "market": {
+    "id": 181,
     "track": "beta",
     "category": "Chat",
     "keywords": "voice, voice chat, proximity, plasmo, plasmo voice, mic, talk",
