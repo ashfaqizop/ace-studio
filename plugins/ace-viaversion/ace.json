@@ -1,0 +1,33 @@
+{
+  "slug": "ace-viaversion",
+  "name": "Ace ViaVersion",
+  "summary": "Let players on other Minecraft versions join your Pumpkin server, translated packet by packet.",
+  "description": "## One server, more client versions\n\nAce ViaVersion is our planned port of **ViaVersion** by the ViaVersion team. It sits between each player and the server and rewrites every packet, so a client on a different Minecraft version can join and play as if they matched.\n\n- **Version translation** for login, configuration and play: blocks, items, entities, chunks, chat and more\n- **Per-player**: everyone on the server's version is untouched\n- **ViaBackwards and ViaRewind** style add-ons for older clients would build on the same hooks\n\n## Why it isn't out yet\n\nPumpkin is always on the latest Minecraft version (26.3), and it turns away any other client version during the handshake, before a plugin can step in. Pumpkin's networking already has hooks for a translating plugin, rewriting login and configuration packets for clients it admits, but those hooks aren't part of the plugin API, and there's no way for a plugin to admit another version. Until both are exposed, a translator has nothing to translate.\n\nPumpkin's source also mentions a native `pumpkin-java-multiversion` translator. If that ships, this port may not be needed.",
+  "categories": ["utility", "admin"],
+  "icon": { "shape": "9-sided-cookie", "symbol": "sync_alt" },
+  "license": "GPL-3.0-or-later",
+  "original": {
+    "name": "ViaVersion",
+    "author": "ViaVersion team",
+    "url": "https://modrinth.com/plugin/viaversion",
+    "license": "GPL-3.0-or-later"
+  },
+  "portedBy": "claude/scout",
+  "status": "waiting-api",
+  "waiting": {
+    "since": "2026-11-06",
+    "needs": [
+      { "api": "Admit other protocol versions at the handshake", "why": "Pumpkin kicks every client that isn't on 26.3 in handle_handshake (\"outdated client\" / \"outdated server\") before any plugin event fires. A translator has to be able to accept the client's version and take over its traffic." },
+      { "api": "Connection-phase packet events in the plugin API", "why": "Login and configuration packets have to be rewritten too. The server has ConnectionPacketReceivedEvent and ConnectionPacketSentEvent for exactly this (pending.rs, 'handlers rewrite it to 26.3'), but they aren't in the plugin WIT, so WASM plugins never see them." },
+      { "api": "Packet events for every connection, from the first packet", "why": "PacketReceivedEvent and PacketSentEvent exist, but only once a player is in the world. Packets sent before that go out untranslated (a TODO in net/java/mod.rs)." }
+    ]
+  },
+  "permissions": [],
+  "mapping": [
+    { "from": "Netty pipeline injection", "to": "Missing", "note": "Needs version admission plus connection-phase packet events." },
+    { "from": "Play-phase packet rewriting", "to": "PacketReceivedEvent / PacketSentEvent (blocking)", "note": "Available: raw payload and packet id can be replaced." },
+    { "from": "ProtocolVersion per connection", "to": "java-player.get-version", "note": "Available once the player has joined." },
+    { "from": "Mapping data (blocks, items, entities)", "to": "embedded in the plugin", "note": "Available: data files ship with the port." }
+  ],
+  "versions": []
+}

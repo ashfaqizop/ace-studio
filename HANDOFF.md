@@ -186,6 +186,14 @@ v0.2 `get-chunk` only returns already-loaded chunks (`pumpkin-wasm-host-v0_1/src
 unloaded chunks return air. The server has `Level::get_or_fetch_chunk` (`pumpkin-world/src/level.rs`, force ticket).
 Resume when the API exposes a chunk load/generate call.
 
+## Ace ViaVersion: waiting-api (`plugins/ace-viaversion/ace.json`)
+
+ViaVersion is GPL-3.0-or-later; upstream wasn't cloned (not needed yet). Pumpkin only accepts 26.3
+(`LOWEST_SUPPORTED_MC_VERSION == CURRENT_MC_VERSION`) and kicks other versions in `net/java/handshake.rs` before any
+plugin sees them. The core has `ConnectionPacketReceivedEvent`/`ConnectionPacketSentEvent` (`net/java/pending.rs`) for
+login/config translation, but they're not in WIT v0.1/v0.2. Play-phase `PacketReceived/SentEvent` are in WIT. Comments
+mention a native `pumpkin-java-multiversion`, so Pumpkin may do this itself.
+
 ## Ace SVC (Simple Voice Chat): ON HOLD for licence, listed as `waiting-permission` (`plugins/ace-svc/ace.json`)
 
 Simple Voice Chat (henkelmax) is **All Rights Reserved** (licence file + Modrinth `LicenseRef-All-Rights-Reserved`).
