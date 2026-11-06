@@ -178,6 +178,19 @@ It also has an in-progress **API v0.2** (`pumpkin-plugin-wit/v0.2`, `pumpkin-was
 `world.break-block(pos, drop-items, flags)`, but with no player or tool, so it doesn't unblock VeinMiner (no Fortune or
 Silk Touch, no tool wear).
 
+## Ace LP (LuckPerms): built, 0.1.0 not released yet
+
+`plugins/ace-lp/`, MIT; upstream is cloned to `plugins/.cache/luckperms` @ b878ae9. Pumpkin has no hook to answer
+permission checks, but `player.set-permission` writes a per-player attachment that every check reads first
+(`pumpkin-util/src/permission.rs`: exact node, then `ns:*` and `prefix.*` wildcards, children, then defaults). Ace LP
+flattens LuckPerms resolution per player and context and writes only the difference. Calling
+`set_permission_level(same)` forces a command-tree resend. Attachments are cleared on leave and unload.
+Storage is LuckPerms' JSON layout. IPC exposes `user` / `has_group` / `group`.
+Next: the web editor. Upload mode first (gzip → bytebin `usercontent.luckperms.net/post`, open
+`luckperms.net/editor/<code>`, `/lp applyedits <code>`), then the live bytesocks socket (ECDSA P-256 signed,
+`/lp trusteditor`). Payload: `metadata`, `permissionHolders`, `tracks`, `knownPermissions`, `potentialContexts`
+(`webeditor/WebEditorRequest.java`); response: `changes`, `groupDeletions`, … (`WebEditorResponse.java`).
+
 ## Ace Chunky: waiting-api (`plugins/ace-chunky/ace.json`)
 
 Chunky (pop4959, GPL-3.0-only; upstream is cloned to `plugins/.cache/chunky` @ c4274bd). Its platform `World` interface
