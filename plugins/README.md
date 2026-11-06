@@ -16,6 +16,10 @@ compiled to WebAssembly components for [Pumpkin](https://github.com/Pumpkin-MC/P
 - **Site listing:** each port has an `ace.json` (the Ace Studio catalog entry). Running `npm run dev` or
   `npm run build` in `web/` copies it to `web/src/data/ports/`, which is committed because Vercel only sees `web/`.
   CI fails if the two differ or if the manifest version doesn't match `Cargo.toml`.
+- **Pumpkin Market:** create the listing once by hand, then put its id in `ace.json` as `"market": { "id": 123 }`.
+  With the `PUMPKIN_MARKET_TOKEN` repo secret set (scopes: `plugins:read`, `plugins:versions:upload`,
+  `plugins:download`, `plugins:publish`), the release job uploads each version to the Market and attaches the
+  Market-signed binary to the GitHub release, so servers load it without the "unsigned" warning.
 - **Releases:** tag `<id>-v<version>` (for example `ace-srv-v0.1.0`). CI attaches `<id>-<version>.wasm` to the
   GitHub release, which is where the Ace Studio site downloads from.
 

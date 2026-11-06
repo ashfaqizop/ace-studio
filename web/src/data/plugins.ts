@@ -31,6 +31,8 @@ export interface Plugin {
   /** How original-platform APIs map to Pumpkin. */
   mapping: { from: string; to: string; note?: string }[];
   versions: PluginVersion[];
+  /** Pumpkin Market listing; release CI uploads each version there and ships the Market-signed binary. */
+  market?: { id: number; track?: 'stable' | 'beta' | 'alpha' };
 }
 
 export const CATEGORIES: Record<string, { label: string; icon: string }> = {

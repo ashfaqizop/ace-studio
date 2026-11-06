@@ -1,4 +1,8 @@
-# Tag <id>-v<version> (e.g. ace-srv-v0.1.0) to publish that port's .wasm as a GitHub release.
+# Tag <id>-v<version> (e.g. ace-srv-v0.1.0) to publish that port.
+#  1. builds every port
+#  2. if the port has a Pumpkin Market listing (ace.json → market.id) and the PUMPKIN_MARKET_TOKEN secret is set:
+#     uploads the .wasm as a new Market version, then downloads the Market-signed copy back
+#  3. attaches the .wasm (signed when step 2 ran) to a GitHub release
 # The Ace Studio site downloads from releases/download/<id>-v<version>/<id>-<version>.wasm.
 name: plugins-release
 
@@ -16,16 +20,17 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.ref_name }}
+      MARKET: https://market.pumpkinmc.org
     steps:
       - uses: actions/checkout@v7
       - uses: actions/download-artifact@v8
         with:
           name: plugins
           path: dist
-      - name: Publish release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.ref_name }}
+
+      - name: Locate build
         run: |
           id="${TAG%-v*}"
           version="${TAG##*-v}"
@@ -35,9 +40,56 @@ jobs:
             ls dist
             exit 1
           fi
-          notes="plugins/${id}/CHANGELOG.md"
-          if [ -f "$notes" ]; then
-            gh release create "$TAG" "$file" --title "$TAG" --notes-file "$notes"
+          {
+            echo "ID=$id"
+            echo "VERSION=$version"
+            echo "FILE=$file"
+            echo "MARKET_ID=$(jq -r '.market.id // empty' "plugins/$id/ace.json")"
+            echo "TRACK=$(jq -r '.market.track // (if .versions[0].channel == "beta" then "beta" else "stable" end)' "plugins/$id/ace.json")"
+          } >> "$GITHUB_ENV"
+
+      - name: Publish to Pumpkin Market (signs the binary)
+        env:
+          MARKET_TOKEN: ${{ secrets.PUMPKIN_MARKET_TOKEN }}
+        run: |
+          if [ -z "$MARKET_ID" ] || [ -z "$MARKET_TOKEN" ]; then
+            echo "::notice::Skipping the Market: set market.id in plugins/$ID/ace.json and the PUMPKIN_MARKET_TOKEN secret to publish there."
+            exit 0
+          fi
+          notes=$(jq -r '.versions[0].changelog' "plugins/$ID/ace.json")
+          meta=$(jq -cn --arg v "$VERSION" --arg t "$TRACK" --arg n "$notes" '{version:$v, track:$t, releaseNotes:$n}')
+          code=$(curl -sS -o upload.json -w '%{http_code}' -X PUT "$MARKET/api/plugins/$MARKET_ID" \
+            -H "Authorization: Bearer $MARKET_TOKEN" -H "X-Requested-With: XMLHttpRequest" \
+            -F "wasm=@$FILE;type=application/wasm" \
+            -F "metadata=$meta")
+          echo "Market upload: HTTP $code"; head -c 600 upload.json; echo
+          if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
+            echo "::error::Pumpkin Market rejected the upload (HTTP $code)"
+            exit 1
+          fi
+          # make the listing live (a no-op error if it already is)
+          code=$(curl -sS -o publish.json -w '%{http_code}' -X POST "$MARKET/api/plugins/$MARKET_ID/publish" \
+            -H "Authorization: Bearer $MARKET_TOKEN" -H "X-Requested-With: XMLHttpRequest")
+          echo "Market publish: HTTP $code"; head -c 300 publish.json; echo
+          # fetch the copy the Market serves; it carries the Market's signature sections
+          if ! curl -sSfL -H "Authorization: Bearer $MARKET_TOKEN" -o signed.wasm "$MARKET/api/v1/rest/plugins/$MARKET_ID/download"; then
+            echo "::warning::Could not download the signed binary from the Market; releasing the unsigned build."
+            exit 0
+          fi
+          if grep -q "wasm_signature" signed.wasm && grep -q "pumpkin.metadata" signed.wasm; then
+            mv signed.wasm "$FILE"
+            echo "::notice::Attached the Market-signed binary ($(stat -c%s "$FILE") bytes)."
           else
-            gh release create "$TAG" "$file" --title "$TAG" --generate-notes
+            echo "::warning::The Market download has no signature sections; releasing the unsigned build."
+          fi
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          notes="plugins/${ID}/CHANGELOG.md"
+          if [ -f "$notes" ]; then
+            gh release create "$TAG" "$FILE" --title "$TAG" --notes-file "$notes"
+          else
+            gh release create "$TAG" "$FILE" --title "$TAG" --generate-notes
           fi
