@@ -178,6 +178,14 @@ It also has an in-progress **API v0.2** (`pumpkin-plugin-wit/v0.2`, `pumpkin-was
 `world.break-block(pos, drop-items, flags)`, but with no player or tool, so it doesn't unblock VeinMiner (no Fortune or
 Silk Touch, no tool wear).
 
+## Ace Chunky: waiting-api (`plugins/ace-chunky/ace.json`)
+
+Chunky (pop4959, GPL-3.0-only; upstream is cloned to `plugins/.cache/chunky` @ c4274bd). Its platform `World` interface
+needs `getChunkAtAsync` (load or generate) and `isChunkGenerated`, plus region-file access for trim. Plugin API v0.1 and
+v0.2 `get-chunk` only returns already-loaded chunks (`pumpkin-wasm-host-v0_1/src/world.rs`), and block reads on
+unloaded chunks return air. The server has `Level::get_or_fetch_chunk` (`pumpkin-world/src/level.rs`, force ticket).
+Resume when the API exposes a chunk load/generate call.
+
 ## Ace SVC (Simple Voice Chat): ON HOLD for licence, listed as `waiting-permission` (`plugins/ace-svc/ace.json`)
 
 Simple Voice Chat (henkelmax) is **All Rights Reserved** (licence file + Modrinth `LicenseRef-All-Rights-Reserved`).

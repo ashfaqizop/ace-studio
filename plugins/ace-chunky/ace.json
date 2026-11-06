@@ -1,0 +1,36 @@
+{
+  "slug": "ace-chunky",
+  "name": "Ace Chunky",
+  "summary": "Pre-generate your world ahead of time, in any shape, so players never wait on new chunks.",
+  "description": "## Generate the world before players get there\n\nAce Chunky is our planned port of **Chunky** by pop4959. Pick a centre and a radius, start a task, and Chunky works through every chunk in that area in the background, so exploring later costs the server almost nothing.\n\n- **Shapes**: square, circle, rectangle, ellipse, diamond, triangle, pentagon, hexagon and star\n- **Patterns**: region, concentric, loop and spiral order\n- **Controls**: start, pause, continue and cancel, resumed after restarts\n- **Progress** with rate and time left, quiet and silent modes\n- **Helpers**: fit the selection to the world border or spawn, and trim chunks outside an area\n\n## Why it isn't out yet\n\nPre-generating means asking the server to load or generate a chunk that no player is near. Pumpkin's server does this internally, but the plugin API can only read chunks that are already loaded, and reading an unloaded one just returns air. Without a way to request chunks there's nothing to port, so this one waits.",
+  "categories": ["world", "performance", "admin"],
+  "icon": { "shape": "arch", "symbol": "grid_view" },
+  "license": "GPL-3.0-only",
+  "original": {
+    "name": "Chunky",
+    "author": "pop4959",
+    "url": "https://modrinth.com/plugin/chunky",
+    "license": "GPL-3.0-only"
+  },
+  "portedBy": "claude/scout",
+  "status": "waiting-api",
+  "waiting": {
+    "since": "2026-11-06",
+    "needs": [
+      { "api": "world.load-chunk(x, z) -> future<result>", "why": "The core of Chunky (World#getChunkAtAsync): load the chunk from disk, or generate it, without a player nearby, and report when it's done so the next one can start. The server has Level::get_or_fetch_chunk (a temporary force ticket); the plugin API's get-chunk only returns chunks that are already loaded." },
+      { "api": "world.is-chunk-generated(x, z)", "why": "Lets a task skip chunks that already exist on disk without loading them (World#isChunkGenerated), so re-running a task or extending a radius is quick." },
+      { "api": "world.delete-chunk(x, z) or region access", "why": "/chunky trim deletes chunks outside the selection. Plugins can only touch their own data folder, so they can't edit the world's region files." }
+    ]
+  },
+  "permissions": [],
+  "mapping": [
+    { "from": "World#getChunkAtAsync", "to": "Missing", "note": "Needs a load-or-generate call with a completion result." },
+    { "from": "World#isChunkGenerated", "to": "Missing", "note": "Needs a check against the world's region storage." },
+    { "from": "/chunky trim (region files)", "to": "Missing", "note": "Needs chunk deletion; region files are outside the plugin sandbox." },
+    { "from": "World#getWorldBorder", "to": "world.get-world-border", "note": "Available: /chunky worldborder." },
+    { "from": "World#getSpawn", "to": "world.get-spawn-location", "note": "Available: /chunky spawn." },
+    { "from": "Shapes and patterns", "to": "plain Rust", "note": "Available: pure geometry, no server calls." },
+    { "from": "Progress and tasks.properties", "to": "scheduler + data folder", "note": "Available: progress messages and saved, resumable tasks." }
+  ],
+  "versions": []
+}
