@@ -1,0 +1,56 @@
+{
+  "slug": "ace-lp",
+  "name": "Ace LP",
+  "summary": "Permissions done properly: groups, inheritance, tracks, per-world rules, temporary ranks, prefixes and meta.",
+  "description": "## Permissions for Pumpkin\n\nAce LP is a Pumpkin port of **LuckPerms** by lucko. Put players in groups, let groups inherit from each other, and control exactly who can do what, where and for how long.\n\n- **Groups and inheritance** with weights, a `default` group for everyone, and primary groups\n- **Contexts**: grant or deny per world, dimension, gamemode or server\n- **Temporary** permissions and ranks that expire on their own (`settemp`, `addtemp`)\n- **Prefixes, suffixes and meta** with priorities, readable by other plugins over IPC\n- **Tracks** for ranks: `/lp user Steve promote staff`\n- **Instant**: changes reach the player (and their command suggestions) right away, no relog\n- **LuckPerms JSON storage**: the same files and layout, so a `json-storage` folder can be copied in\n\n## Pumpkin nodes\n\nPumpkin's permission nodes look like `minecraft:command.gamemode` or `ace-srv:command.link`. Wildcards work per namespace (`minecraft:*`, `minecraft:command.*`); a bare `*` doesn't exist on Pumpkin.\n\n## Not in this version\n\nThe web editor (`/lp editor`) comes next. Verbose, tree, bulk updates, the action log, SQL storage and cross-server sync come later.",
+  "categories": ["admin", "utility"],
+  "icon": { "shape": "gem", "symbol": "admin_panel_settings" },
+  "license": "MIT",
+  "original": {
+    "name": "LuckPerms",
+    "author": "lucko & LuckPerms contributors",
+    "url": "https://modrinth.com/plugin/luckperms",
+    "license": "MIT"
+  },
+  "portedBy": "claude/forge",
+  "market": {
+    "track": "beta",
+    "category": "Admin Tools",
+    "keywords": "permissions, luckperms, groups, ranks, prefix, suffix, tracks, perms",
+    "commands": [
+      { "name": "lp", "aliases": ["luckperms", "perms", "perm", "permissions"], "permission": "ace-lp:command", "description": "Manage users, groups, tracks, permissions and meta" },
+      { "name": "lp user <user> permission set <node> [true|false] [context...]", "permission": "ace-lp:command", "description": "Grant or deny a permission" },
+      { "name": "lp user <user> parent add <group>", "permission": "ace-lp:command", "description": "Put a player in a group" },
+      { "name": "lp user <user> promote <track>", "permission": "ace-lp:command", "description": "Move a player up a track" },
+      { "name": "lp creategroup <name> [weight]", "permission": "ace-lp:command", "description": "Create a group" }
+    ]
+  },
+  "permissions": [
+    { "id": "fs.write.data", "why": "Saves users, groups, tracks and config.toml in its data folder (LuckPerms JSON layout)." },
+    { "id": "fs.read.data", "why": "Loads them on start and on /lp sync." }
+  ],
+  "mapping": [
+    { "from": "LuckPermsPermissible (answers every check)", "to": "player.set-permission (attachments)", "note": "Flattened permissions are written to Pumpkin's per-player attachment; only the difference on each change." },
+    { "from": "InheritanceGraph + InheritanceComparator", "to": "resolve::Groups", "note": "Depth-first pre-order, weight then primary group." },
+    { "from": "NodeMap ordering", "to": "resolve::ordered", "note": "Specific contexts first, then temporary, then deny." },
+    { "from": "Context calculators", "to": "world / dimension-type / gamemode / server", "note": "Updated on PlayerChangedWorldEvent and PlayerGamemodeChangeEvent." },
+    { "from": "ExpireTemporaryTask", "to": "scheduler (every second)", "note": "Expired nodes are removed and re-applied." },
+    { "from": "SeparatedConfigurateStorage (JSON)", "to": "json-storage/ in the data folder", "note": "Same layout and field names." },
+    { "from": "LuckPerms API / Vault", "to": "Pumpkin IPC", "note": "JSON requests for groups, prefix, suffix and meta." },
+    { "from": "Bukkit wildcard '*'", "to": "namespace:*", "note": "Pumpkin wildcards are per namespace; the API can't list every node to expand '*'." },
+    { "from": "Web editor (bytebin / bytesocks)", "to": "Planned", "note": "Upload and applyedits over http.outbound, then the live socket." },
+    { "from": "Verbose / tree", "to": "Not possible yet", "note": "Pumpkin checks don't pass through plugins." }
+  ],
+  "versions": [
+    {
+      "version": "0.1.0",
+      "date": "2026-11-06",
+      "pumpkin": "0.2.1",
+      "minecraft": "26.3",
+      "file": "ace-lp-0.1.0.wasm",
+      "size": 0,
+      "channel": "beta",
+      "changelog": "- First Pumpkin release: groups, inheritance and weights, contexts, temporary nodes, prefixes/suffixes/meta, tracks, `/lp` commands, LuckPerms JSON storage and an IPC API"
+    }
+  ]
+}
