@@ -413,8 +413,19 @@ em { font-style: italic; color: var(--c-primary); }
 @media (max-width: 1099px) { .p-layout { grid-template-columns: 1fr; } }
 .p-tabs { display: block; }
 .p-tabs m3e-tab-panel { padding: 24px 0; }
-.overview { display: grid; grid-template-columns: minmax(0, 1fr) 200px; gap: 28px; align-items: start; }
-.toc { position: sticky; top: calc(var(--topbar-h) + 16px); }
+.overview { display: grid; grid-template-columns: minmax(0, 1fr) 232px; gap: 28px; align-items: start; }
+.toc {
+  position: sticky; top: calc(var(--topbar-h) + 16px);
+  --m3e-toc-width: 100%;
+  --m3e-toc-item-font-size: 0.88rem;
+  --m3e-toc-item-selected-font-size: 0.88rem;
+  --m3e-toc-item-line-height: 1.35;
+  --m3e-toc-item-selected-line-height: 1.35;
+  --m3e-toc-item-padding-block: 6px;
+  --m3e-toc-item-shape: 14px;
+  --m3e-toc-container-padding-inline: 4px;
+  overflow-wrap: anywhere;
+}
 @media (max-width: 1299px) { .overview { grid-template-columns: 1fr; } .overview .toc { display: none; } }
 
 .prose { max-width: 74ch; font-size: 1.02rem; }
@@ -509,7 +520,7 @@ pre.code code { padding: 0; background: none; }
 .lookup-status { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
 
 /* ---------- Docs ---------- */
-.docs { display: grid; grid-template-columns: minmax(0, 1fr) 220px; gap: 32px; align-items: start; }
+.docs { display: grid; grid-template-columns: minmax(0, 1fr) 248px; gap: 32px; align-items: start; }
 @media (max-width: 999px) { .docs { grid-template-columns: 1fr; } .docs .toc { display: none; } }
 .docs-body m3e-callout { margin: 16px 0; }
 .faq { display: grid; gap: 8px; margin-top: 12px; }
@@ -599,3 +610,36 @@ pre.code code { padding: 0; background: none; }
 }
 
 .page-error { padding: 48px 0; text-align: center; }
+
+/* ---------- Brand marks ---------- */
+.brand { display: inline-block; vertical-align: -0.2em; flex: none; }
+.eyebrow-brands { gap: 6px; }
+.eyebrow-brands .logo, .dt-logo .logo { width: 16px; height: 16px; display: inline-block; vertical-align: -0.2em; }
+.dt-logo { display: inline-flex; }
+.footer-brands { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 4px; }
+.fb {
+  display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px 6px 10px; border-radius: 999px;
+  font-size: 0.82rem; font-weight: 650; text-decoration: none; color: var(--c-fg);
+  background: var(--md-sys-color-surface-container-high);
+  transition: transform 0.35s var(--spring), background 0.25s;
+}
+.fb .logo { width: 18px; height: 18px; }
+.fb:hover { transform: translateY(-2px); background: var(--md-sys-color-secondary-container); }
+.brand-link { display: inline-flex; align-items: center; gap: 4px; }
+.help-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+.powered { display: flex; align-items: center; gap: 6px; margin-top: 12px; }
+.mr-badge { margin-left: auto; align-self: flex-start; }
+.mr-links { display: flex; flex-wrap: wrap; gap: 4px; margin-left: -12px; }
+.mr-prefix { display: inline-flex; padding-inline: 4px 2px; }
+
+/* Modrinth autocomplete options */
+.mr-opt { display: flex; align-items: center; gap: 12px; width: 100%; min-width: 0; padding: 4px 0; }
+.mr-opt img, .mr-opt-ph { width: 36px; height: 36px; border-radius: 10px; flex: none; object-fit: cover; background: var(--md-sys-color-surface-container-highest); display: grid; place-items: center; }
+.mr-opt-main { display: grid; min-width: 0; flex: 1; line-height: 1.25; }
+.mr-opt-title { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mr-opt-sub { font-size: 0.78rem; color: var(--c-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mr-opt-lic { display: inline-flex; align-items: center; gap: 3px; flex: none; font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--md-sys-color-surface-container-highest); color: var(--c-muted); }
+.mr-opt-lic m3e-icon { --m3e-icon-size: 14px; }
+.mr-opt-lic.lic-primary { background: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); }
+.mr-opt-lic.lic-error { background: var(--md-sys-color-error-container); color: var(--md-sys-color-on-error-container); }
+.mr-opt-lic.lic-tertiary { background: var(--md-sys-color-tertiary-container); color: var(--md-sys-color-on-tertiary-container); }

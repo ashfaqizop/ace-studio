@@ -3,6 +3,7 @@ import { icon, esc } from '../lib/html';
 import { navigate } from '../lib/router';
 import { prefs, onPrefs } from '../lib/prefs';
 import { appearanceDialog, mountAppearance } from './appearance';
+import { brand } from '../lib/brands';
 import { sprite } from '../data/crew';
 
 export const NAV: { href: string; label: string; icon: string; mobile: boolean }[] = [
@@ -47,7 +48,7 @@ export function renderShell(root: HTMLElement): HTMLElement {
             <m3e-dialog-trigger for="appearance"></m3e-dialog-trigger>
           </m3e-icon-button>
           <m3e-tooltip for="theme-btn">Appearance</m3e-tooltip>
-          <m3e-icon-button id="gh-btn" href="${GITHUB}" target="_blank" rel="noopener" aria-label="GitHub">${icon('code')}</m3e-icon-button>
+          <m3e-icon-button id="gh-btn" href="${GITHUB}" target="_blank" rel="noopener" aria-label="GitHub">${brand('github', { size: 22 })}</m3e-icon-button>
           <m3e-tooltip for="gh-btn">Source on GitHub</m3e-tooltip>
         </div>
       </header>
@@ -60,6 +61,13 @@ export function renderShell(root: HTMLElement): HTMLElement {
           <div>
             <p class="footer-brand">Ace <em>Studio</em></p>
             <p class="muted">${esc(SITE.tagline)}. An independent project, not affiliated with Modrinth, Mojang or the Pumpkin team.</p>
+          </div>
+          <div class="footer-brands" aria-label="Built with">
+            <a href="https://modrinth.com/plugins" target="_blank" rel="noopener" class="fb">${brand('modrinth', { size: 18, tint: true })}<span>Ports from Modrinth</span></a>
+            <a href="https://pumpkinmc.org" target="_blank" rel="noopener" class="fb">${logo()}<span>For PumpkinMC</span></a>
+            <a href="https://webassembly.org" target="_blank" rel="noopener" class="fb">${brand('webassembly', { size: 18, tint: true })}<span>Runs as WebAssembly</span></a>
+            <a href="${GITHUB}" target="_blank" rel="noopener" class="fb">${brand('github', { size: 18 })}<span>Open source on GitHub</span></a>
+            <a href="https://discord.gg/aaNuD6rFEe" target="_blank" rel="noopener" class="fb">${brand('discord', { size: 18, tint: true })}<span>PumpkinMC Discord</span></a>
           </div>
           <nav aria-label="Footer">
             ${NAV.map((n) => `<a href="${n.href}">${esc(n.label)}</a>`).join('')}

@@ -6,6 +6,8 @@ import { ago, bytes, codeBlock, date, esc, icon, md, num } from '../lib/html';
 import { assetUrl, GITHUB } from '../config';
 import { pushRecent } from '../lib/prefs';
 import { reveal } from '../lib/ui';
+import { brand } from '../lib/brands';
+import { logo } from '../components/shell';
 
 const PERM_ICON: Record<string, string> = {
   'fs:read:data': 'folder_open',
@@ -36,7 +38,7 @@ function header(p: Plugin): string {
       <div class="p-badges">
         <span class="tag">${icon('gavel')}${esc(p.license)}</span>
         ${v.channel === 'beta' ? `<span class="tag tag-tertiary">${icon('experiment')}Beta</span>` : ''}
-        <span class="tag">${icon('memory')}WASM</span>
+        <span class="tag">${brand('webassembly', { size: 14, tint: true })}WASM</span>
       </div>
       <h1 class="display-md">${esc(p.name)}</h1>
       <p class="lead">${esc(p.summary)}</p>
@@ -128,7 +130,7 @@ function tabs(p: Plugin): string {
             ${icon('person', { cls: 'credit-i' })}
             <div><span class="label">Original plugin</span><h3>${esc(p.original.name)}</h3>
             <p class="muted">by ${esc(p.original.author)} · ${esc(p.original.license)}</p>
-            ${p.original.url ? `<m3e-button variant="text" href="${esc(p.original.url)}" target="_blank" rel="noopener">View on Modrinth ${icon('open_in_new', { slot: 'trailing-icon' })}</m3e-button>` : ''}</div>
+            ${p.original.url ? `<m3e-button variant="tonal" href="${esc(p.original.url)}" target="_blank" rel="noopener">${brand('modrinth', { slot: 'icon', size: 18, tint: true })}View on Modrinth</m3e-button>` : ''}</div>
           </div>
         </m3e-card>
         <m3e-card variant="outlined">
@@ -154,9 +156,9 @@ function aside(p: Plugin): string {
       <div slot="content" class="aside-block">
         <h3 class="label">Compatibility</h3>
         <dl class="kv">
-          <dt>${icon('deployed_code')}Pumpkin</dt><dd>${esc(v.pumpkin)}</dd>
+          <dt><span class="dt-logo">${logo()}</span>Pumpkin</dt><dd>${esc(v.pumpkin)}</dd>
           <dt>${icon('sports_esports')}Minecraft</dt><dd>${esc(v.minecraft)}</dd>
-          <dt>${icon('memory')}Runtime</dt><dd>WASM component</dd>
+          <dt>${brand('webassembly', { size: 16, tint: true })}Runtime</dt><dd>WASM component</dd>
           <dt>${icon('sd_card')}Size</dt><dd>${bytes(v.size)}</dd>
         </dl>
       </div>
@@ -173,7 +175,9 @@ function aside(p: Plugin): string {
         <m3e-chip-set>${p.categories.map((c) => `<m3e-assist-chip href="/plugins?cat=${esc(c)}">${icon(CATEGORIES[c]?.icon ?? 'label', { slot: 'icon' })}${esc(CATEGORIES[c]?.label ?? c)}</m3e-assist-chip>`).join('')}</m3e-chip-set>
         <h3 class="label">Links</h3>
         <div class="links">
-          <a href="${GITHUB}/issues/new?title=${encodeURIComponent(`[${p.name}] `)}&labels=bug" target="_blank" rel="noopener">${icon('bug_report')}Report a bug</a>
+          <a href="${GITHUB}/issues/new?title=${encodeURIComponent(`[${p.name}] `)}&labels=bug" target="_blank" rel="noopener">${brand('github', { size: 18 })}Report a bug</a>
+          <a href="${GITHUB}/releases" target="_blank" rel="noopener">${brand('github', { size: 18 })}All releases</a>
+          ${p.original.url ? `<a href="${esc(p.original.url)}" target="_blank" rel="noopener">${brand('modrinth', { size: 18, tint: true })}Original on Modrinth</a>` : ''}
           <a href="/docs">${icon('menu_book')}Install guide</a>
         </div>
       </div>

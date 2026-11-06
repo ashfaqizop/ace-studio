@@ -1,6 +1,7 @@
 // Every M3E component the site uses. Each import registers its custom elements.
 import '@m3e/web/theme';
 import '@m3e/web/app-bar';
+import '@m3e/web/autocomplete';
 import '@m3e/web/avatar';
 import '@m3e/web/badge';
 import '@m3e/web/breadcrumb';

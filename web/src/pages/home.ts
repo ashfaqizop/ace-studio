@@ -5,6 +5,8 @@ import { sprite, char, type CharRef } from '../data/crew';
 import { pluginCard, pluginIcon } from '../components/cards';
 import { ago, esc, icon } from '../lib/html';
 import { countUp, reveal } from '../lib/ui';
+import { brand } from '../lib/brands';
+import { logo } from '../components/shell';
 import { prefs } from '../lib/prefs';
 import { pluginBySlug } from '../data/plugins';
 
@@ -43,7 +45,7 @@ const home: Page = {
         <m3e-shape class="hs hs4" name="soft-burst"></m3e-shape>
       </div>
       <div class="hero-copy">
-        <span class="eyebrow">${icon('swap_horiz')} Modrinth → PumpkinMC</span>
+        <span class="eyebrow eyebrow-brands">${brand('modrinth', { size: 16, tint: true })} Modrinth ${icon('arrow_forward')} ${logo()} PumpkinMC</span>
         <h1 class="display">Your favourite plugins, <em>reborn</em> for Pumpkin.</h1>
         <p class="lead">Ace Studio translates great Modrinth plugins into native, sandboxed PumpkinMC plugins, one careful port at a time, always crediting the original authors.</p>
         <div class="hero-actions">
