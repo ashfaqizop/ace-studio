@@ -4,7 +4,6 @@
 use crate::proto::{Bad, Id, In, Out, R};
 
 pub const CHANNEL: &str = "plasmo:voice/v2";
-pub const FLAG_CHANNEL: &str = "plasmo:voice/v2/installed";
 pub const UDP_MAGIC: i32 = 0x4e90_04e9;
 
 pub const ADDON_ID: &str = "plasmovoice";
@@ -259,7 +258,7 @@ pub struct UdpHeader {
 #[derive(Debug)]
 pub enum UdpFromClient {
     Ping,
-    Audio { sequence: i64, data: Vec<u8>, activation: Id, distance: i16, stereo: bool },
+    Audio { sequence: i64, data: Vec<u8>, activation: Id, distance: i16 },
 }
 
 pub fn decode_udp(buf: &[u8]) -> R<(UdpHeader, UdpFromClient)> {
@@ -277,7 +276,6 @@ pub fn decode_udp(buf: &[u8]) -> R<(UdpHeader, UdpFromClient)> {
             data: i.bytes(1, 2048)?,
             activation: i.id()?,
             distance: i.i16()?,
-            stereo: i.bool()?,
         },
         _ => return Err(Bad),
     };
@@ -336,8 +334,8 @@ mod tests {
         let (h, p) = decode_udp(&o.into_vec()).unwrap();
         assert_eq!(h.secret, secret);
         match p {
-            UdpFromClient::Audio { sequence, data, activation, distance, stereo } => {
-                assert_eq!((sequence, data.len(), activation, distance, stereo), (42, 4, PROXIMITY_ACTIVATION, 16, false));
+            UdpFromClient::Audio { sequence, data, activation, distance } => {
+                assert_eq!((sequence, data.len(), activation, distance), (42, 4, PROXIMITY_ACTIVATION, 16));
             }
             _ => panic!("not audio"),
         }

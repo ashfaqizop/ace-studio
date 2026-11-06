@@ -386,7 +386,7 @@ impl Voice {
         if first {
             self.on_connected(id);
         }
-        if let UdpFromClient::Audio { sequence, data, activation, distance, stereo: _ } = packet {
+        if let UdpFromClient::Audio { sequence, data, activation, distance } = packet {
             self.on_audio(id, sequence, &data, activation, distance);
         }
     }

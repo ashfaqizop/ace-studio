@@ -87,10 +87,6 @@ impl Out {
         self.0.extend_from_slice(b);
         self
     }
-    pub fn raw(&mut self, b: &[u8]) -> &mut Self {
-        self.0.extend_from_slice(b);
-        self
-    }
     pub fn into_vec(self) -> Vec<u8> {
         self.0
     }
@@ -116,14 +112,12 @@ impl<'a> In<'a> {
         self.p = end;
         Ok(s)
     }
+    #[cfg(test)]
     pub fn remaining(&self) -> usize {
         self.b.len() - self.p
     }
     pub fn u8(&mut self) -> R<u8> {
         Ok(self.take(1)?[0])
-    }
-    pub fn i8(&mut self) -> R<i8> {
-        Ok(self.u8()? as i8)
     }
     pub fn bool(&mut self) -> R<bool> {
         Ok(self.u8()? != 0)

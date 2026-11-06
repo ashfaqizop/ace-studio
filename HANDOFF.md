@@ -158,6 +158,26 @@ Ace VeinMiner first. `enchantment-manager.register-enchantment` exists in v0.1, 
 min/max cost, and plugins can't add enchantments to tags (in_enchanting_table/tradeable/on_random_loot/treasure).
 Upstream asks for no reuploads or forks on Modrinth/CurseForge; we publish only to GitHub, our site and the Pumpkin Market.
 
+## Ace Plasmo (Plasmo Voice): built, v0.1.0 not released yet
+
+`plugins/ace-plasmo/`, LGPL-3.0-only, upstream `plugins/.cache/plasmo` (plasmoapp/plasmo-voice @ b93ea39, 2.2.0-beta.2).
+Server side only; players use the official Plasmo Voice 2.x mod. Protocol notes are in `ace-plasmo/PORTING.md`.
+- Handshake runs on plugin channel `plasmo:voice/v2` (`PlayerCustomPayloadEvent` in, `java_player.send_custom_payload`
+  out; Pumpkin fires the event for every play-phase payload, `crates/pumpkin-core/src/net/java/mod.rs`). Audio goes
+  over a non-blocking `std::net::UdpSocket` (permission `network.udp`: `network.udp.bind` alone can't send), drained
+  every tick.
+- The server never decodes audio. It RSA-encrypts (PKCS#1 v1.5, `rsa` crate) a 16-byte AES key per client and forwards
+  the encrypted Opus bytes as-is.
+- Wire format: Java DataOutput (big-endian, modified UTF-8). Fixed ids `nameUUIDFromBytes("proximity_activation" /
+  "proximity_line")` are hardcoded and checked by tests (md-5 dev-dep).
+- Not yet: mutes, `/vreload`, mod-required kick, proxy service channel, add-ons, vanish.
+- Testing needs a client with Plasmo Voice 2.x for MC 26.3, and UDP 25565 open.
+
+Pumpkin source at the pinned rev is cloned in `plugins/.cache/pumpkin` (it includes `pumpkin-plugin-api` and the WIT).
+It also has an in-progress **API v0.2** (`pumpkin-plugin-wit/v0.2`, `pumpkin-wasm-host-v0_2`). v0.2 adds
+`world.break-block(pos, drop-items, flags)`, but with no player or tool, so it doesn't unblock VeinMiner (no Fortune or
+Silk Touch, no tool wear).
+
 ## Ace SVC (Simple Voice Chat): ON HOLD for licence, listed as `waiting-permission` (`plugins/ace-svc/ace.json`)
 
 Simple Voice Chat (henkelmax) is **All Rights Reserved** (licence file + Modrinth `LicenseRef-All-Rights-Reserved`).
