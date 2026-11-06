@@ -24,4 +24,5 @@ jobs:
         env:
           PLUGIN: ${{ inputs.plugin }}
           MARKET_ID: ${{ steps.listing.outputs.MARKET_ID }}
-        run: echo "Pumpkin Market listing for **$PLUGIN**: id \`$MARKET_ID\`" >> "$GITHUB_STEP_SUMMARY"
+        run: |
+          echo "Pumpkin Market listing for **$PLUGIN**: id \`$MARKET_ID\`" >> "$GITHUB_STEP_SUMMARY"
