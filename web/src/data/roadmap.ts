@@ -1,4 +1,5 @@
 import type { CharRef } from './crew';
+import { roadmap as demoRoadmap } from 'virtual:demo-data';
 
 export type Stage = 'queued' | 'translating' | 'testing' | 'shipped';
 
@@ -20,4 +21,6 @@ export interface RoadmapItem {
 }
 
 /** Ports in progress. Add an item when a request is accepted; move it along as it progresses. */
-export const ROADMAP: RoadmapItem[] = [];
+export const ROADMAP: RoadmapItem[] = [
+  ...demoRoadmap, // dev-only demo entries (empty in production)
+];

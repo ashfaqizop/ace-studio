@@ -1,7 +1,8 @@
 import { CATEGORIES, latest, type Plugin } from '../data/plugins';
 import { char, sprite, type CharRef } from '../data/crew';
 import { ago, esc, icon, num } from '../lib/html';
-import { isFavorite } from '../lib/prefs';
+import { isFavorite, isNew, prefs } from '../lib/prefs';
+import { compat } from '../lib/compat';
 
 /** The plugin's expressive icon: an m3e-shape with a Material Symbol inside. */
 export function pluginIcon(p: Plugin, size = 56): string {
@@ -15,7 +16,39 @@ export function favButton(slug: string, variant = 'standard'): string {
   </m3e-icon-button>`;
 }
 
-export function pluginCard(p: Plugin): string {
+export function compareButton(slug: string, variant = 'standard'): string {
+  const on = prefs().compare.includes(slug);
+  return `<m3e-icon-button class="cmp" toggle variant="${variant}" data-compare="${esc(slug)}"${on ? ' selected' : ''} aria-label="Compare">
+    ${icon('compare_arrows')}${icon('library_add_check', { slot: 'selected', filled: true })}
+  </m3e-icon-button>`;
+}
+
+/** Sandbox badge: how many Pumpkin capabilities the plugin asks for. */
+export function permBadge(p: Plugin): string {
+  const n = p.permissions.length;
+  return n === 0
+    ? `<span class="tag tag-safe" title="Runs with no extra Pumpkin capabilities">${icon('verified_user', { filled: true })}No permissions</span>`
+    : `<span class="tag" title="${esc(p.permissions.map((x) => x.id).join(', '))}">${icon('shield')}${n} permission${n === 1 ? '' : 's'}</span>`;
+}
+
+/** Compatibility with the visitor's chosen Pumpkin version (empty until they pick one). */
+export function compatBadge(p: Plugin): string {
+  const c = compat(p);
+  switch (c.state) {
+    case 'ok':
+      return `<span class="tag tag-safe" title="Works on Pumpkin ${esc(prefs().server)}">${icon('check_circle', { filled: true })}Works on your server</span>`;
+    case 'older':
+      return `<span class="tag tag-tertiary" title="The latest release needs a newer Pumpkin">${icon('history')}v${esc(c.version.version)} works for you</span>`;
+    case 'no':
+      return `<span class="tag tag-warn" title="Update your server to run this">${icon('upgrade')}Needs Pumpkin ${esc(c.needs)}+</span>`;
+    default:
+      return '';
+  }
+}
+
+export const newBadge = (p: Plugin) => (isNew(latest(p).date) ? `<span class="tag tag-new">${icon('new_releases', { filled: true })}New</span>` : '');
+
+export function pluginCard(p: Plugin, nameHtml?: string): string {
   const v = latest(p);
   const porter = char(p.portedBy);
   return `
@@ -23,17 +56,20 @@ export function pluginCard(p: Plugin): string {
     <div slot="header" class="pc-head">
       ${pluginIcon(p)}
       <div class="pc-title">
-        <h3>${esc(p.name)}</h3>
+        <h3>${nameHtml ?? esc(p.name)}</h3>
         <span class="muted">port of ${esc(p.original.name)}</span>
       </div>
-      ${favButton(p.slug)}
+      <div class="pc-btns">${compareButton(p.slug)}${favButton(p.slug)}</div>
     </div>
     <div slot="content" class="pc-body">
       <p>${esc(p.summary)}</p>
-      <div class="pc-cats">${p.categories.map((c) => `<span class="tag">${icon(CATEGORIES[c]?.icon ?? 'label')}${esc(CATEGORIES[c]?.label ?? c)}</span>`).join('')}</div>
+      <div class="pc-cats">
+        ${newBadge(p)}${compatBadge(p)}${permBadge(p)}
+        ${p.categories.map((c) => `<span class="tag">${icon(CATEGORIES[c]?.icon ?? 'label')}${esc(CATEGORIES[c]?.label ?? c)}</span>`).join('')}
+      </div>
     </div>
     <div slot="footer" class="pc-foot">
-      <span title="Downloads">${icon('download')}${num(p.downloads)}</span>
+      <span title="Downloads">${icon('download')}<span data-dl="${esc(p.slug)}">${num(p.downloads)}</span></span>
       <span title="Latest version">${icon('sell')}v${esc(v.version)}${v.channel === 'beta' ? ' <b class="beta">beta</b>' : ''}</span>
       <span title="Updated">${icon('update')}${ago(v.date)}</span>
       <span class="pc-porter" title="Ported by ${esc(porter.name)}">${sprite(p.portedBy, 0.5)}</span>
@@ -41,22 +77,23 @@ export function pluginCard(p: Plugin): string {
   </m3e-card>`;
 }
 
-export function pluginRow(p: Plugin): string {
+export function pluginRow(p: Plugin, nameHtml?: string): string {
   const v = latest(p);
   return `
   <m3e-card class="plugin-row" variant="outlined" actionable href="/plugin/${esc(p.slug)}" orientation="horizontal" data-reveal>
     <div slot="content" class="pr-body">
       ${pluginIcon(p, 44)}
       <div class="pr-main">
-        <h3>${esc(p.name)} <span class="muted">v${esc(v.version)}</span></h3>
+        <h3>${nameHtml ?? esc(p.name)} <span class="muted">v${esc(v.version)}</span> ${newBadge(p)}</h3>
         <p class="muted">${esc(p.summary)}</p>
       </div>
       <div class="pr-stats">
-        <span>${icon('download')}${num(p.downloads)}</span>
+        ${compatBadge(p)}${permBadge(p)}
+        <span>${icon('download')}<span data-dl="${esc(p.slug)}">${num(p.downloads)}</span></span>
         <span>${icon('update')}${ago(v.date)}</span>
         <span class="tag">${esc(p.license)}</span>
       </div>
-      ${favButton(p.slug)}
+      ${compareButton(p.slug)}${favButton(p.slug)}
     </div>
   </m3e-card>`;
 }

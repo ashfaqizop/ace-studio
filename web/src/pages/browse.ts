@@ -4,37 +4,64 @@ import { PLUGINS, CATEGORIES, updatedAt, type Plugin } from '../data/plugins';
 import { pluginCard, pluginRow, emptyState } from '../components/cards';
 import { esc, icon } from '../lib/html';
 import { prefs, setPrefs, onPrefs } from '../lib/prefs';
-import { reveal } from '../lib/ui';
+import { reveal, applyDownloads, downloadsFor } from '../lib/ui';
+import { fuzzy, highlight } from '../lib/fuzzy';
+import { compat, PUMPKIN_VERSIONS } from '../lib/compat';
 import { buddySay } from '../components/buddy';
 
-type Sort = 'popular' | 'updated' | 'name' | 'followers';
-type El = HTMLElement & { selected?: boolean; checked?: boolean; value?: string };
+type Sort = 'relevance' | 'popular' | 'updated' | 'name' | 'followers';
+type El = HTMLElement & { selected?: boolean; checked?: boolean; value?: string | null };
 
 interface State {
   q: string;
   cats: string[];
   sort: Sort;
   saved: boolean;
+  safe: boolean;
+  works: boolean;
   view: 'grid' | 'list';
 }
 
-function filter(s: State): Plugin[] {
-  const terms = s.q.toLowerCase().split(/\s+/).filter(Boolean);
+interface Hit {
+  p: Plugin;
+  score: number;
+  nameHtml?: string;
+}
+
+/** Score a plugin against the query: name matches count most, then original name, summary, tags. */
+function score(p: Plugin, q: string): Hit | null {
+  if (!q) return { p, score: 0 };
+  const name = fuzzy(q, p.name);
+  const fields = [
+    name && { s: name.score * 3 },
+    fuzzy(q, p.original.name) && { s: fuzzy(q, p.original.name)!.score * 2 },
+    fuzzy(q, p.summary) && { s: fuzzy(q, p.summary)!.score },
+    fuzzy(q, `${p.categories.map((c) => CATEGORIES[c]?.label ?? c).join(' ')} ${p.license}`) && { s: 10 },
+  ].filter(Boolean) as { s: number }[];
+  if (!fields.length) return null;
+  return { p, score: Math.max(...fields.map((f) => f.s)), nameHtml: name ? highlight(p.name, name.hits) : undefined };
+}
+
+function filter(s: State): Hit[] {
   const favs = prefs().favorites;
-  let list = PLUGINS.filter((p) => {
-    if (s.saved && !favs.includes(p.slug)) return false;
-    if (s.cats.length && !s.cats.some((c) => p.categories.includes(c))) return false;
-    if (!terms.length) return true;
-    const hay = `${p.name} ${p.summary} ${p.original.name} ${p.categories.join(' ')} ${p.license}`.toLowerCase();
-    return terms.every((t) => hay.includes(t));
-  });
-  const by: Record<Sort, (a: Plugin, b: Plugin) => number> = {
-    popular: (a, b) => b.downloads - a.downloads,
-    followers: (a, b) => b.followers - a.followers,
-    updated: (a, b) => updatedAt(b).localeCompare(updatedAt(a)),
-    name: (a, b) => a.name.localeCompare(b.name),
+  const hits: Hit[] = [];
+  for (const p of PLUGINS) {
+    if (s.saved && !favs.includes(p.slug)) continue;
+    if (s.safe && p.permissions.length) continue;
+    if (s.works && prefs().server && compat(p).state === 'no') continue;
+    if (s.cats.length && !s.cats.some((c) => p.categories.includes(c))) continue;
+    const h = score(p, s.q);
+    if (h) hits.push(h);
+  }
+  const sort: Sort = s.sort === 'relevance' && !s.q ? 'popular' : s.sort;
+  const by: Record<Sort, (a: Hit, b: Hit) => number> = {
+    relevance: (a, b) => b.score - a.score,
+    popular: (a, b) => downloadsFor(b.p.slug) - downloadsFor(a.p.slug),
+    followers: (a, b) => b.p.followers - a.p.followers,
+    updated: (a, b) => updatedAt(b.p).localeCompare(updatedAt(a.p)),
+    name: (a, b) => a.p.name.localeCompare(b.p.name),
   };
-  return list.sort(by[s.sort]);
+  return hits.sort(by[sort]);
 }
 
 function results(s: State): string {
@@ -47,9 +74,15 @@ function results(s: State): string {
            <m3e-button variant="text" href="/request">Request it as a port</m3e-button>`);
   }
   return s.view === 'grid'
-    ? `<div class="grid">${list.map(pluginCard).join('')}</div>`
-    : `<div class="rows">${list.map(pluginRow).join('')}</div>`;
+    ? `<div class="grid">${list.map((h) => pluginCard(h.p, h.nameHtml)).join('')}</div>`
+    : `<div class="rows">${list.map((h) => pluginRow(h.p, h.nameHtml)).join('')}</div>`;
 }
+
+const SPECIAL = [
+  { v: '__saved', label: 'Saved', icon: 'favorite' },
+  { v: '__works', label: 'Works on my server', icon: 'dns' },
+  { v: '__safe', label: 'No permissions', icon: 'verified_user' },
+];
 
 const browse: Page = {
   title: (c) => (c.query.get('saved') ? 'Saved plugins' : 'Browse ports'),
@@ -62,6 +95,7 @@ const browse: Page = {
     }
     const s = readState(c.query);
     const count = filter(s).length;
+    const on = (v: string) => (v === '__saved' ? s.saved : v === '__safe' ? s.safe : s.works);
     return `
     <section class="page-head">
       <span class="eyebrow">${icon(s.saved ? 'favorite' : 'extension')} ${s.saved ? 'Your collection' : 'Catalog'}</span>
@@ -70,11 +104,11 @@ const browse: Page = {
     <section class="filters" aria-label="Filters">
       <m3e-search-bar clearable class="page-search">
         ${icon('search', { slot: 'leading' })}
-        <input slot="input" data-page-search type="search" placeholder="Search by name, feature or original plugin" value="${esc(s.q)}" aria-label="Search ports" />
+        <input slot="input" data-page-search type="search" placeholder="Search by name, feature or original plugin (typos are fine)" value="${esc(s.q)}" aria-label="Search ports" />
       </m3e-search-bar>
       <div class="filter-row">
-        <m3e-filter-chip-set multi id="cats" aria-label="Categories">
-          <m3e-filter-chip value="__saved"${s.saved ? ' selected' : ''}>${icon('favorite', { slot: 'icon' })}Saved</m3e-filter-chip>
+        <m3e-filter-chip-set multi id="cats" aria-label="Filters">
+          ${SPECIAL.map((x) => `<m3e-filter-chip value="${x.v}"${on(x.v) ? ' selected' : ''}>${icon(x.icon, { slot: 'icon' })}${x.label}</m3e-filter-chip>`).join('')}
           ${Object.entries(CATEGORIES).map(([k, cat]) => `<m3e-filter-chip value="${k}"${s.cats.includes(k) ? ' selected' : ''}>${icon(cat.icon, { slot: 'icon' })}${esc(cat.label)}</m3e-filter-chip>`).join('')}
         </m3e-filter-chip-set>
       </div>
@@ -82,8 +116,17 @@ const browse: Page = {
         <span class="count" id="count" aria-live="polite">${count} ${count === 1 ? 'port' : 'ports'}</span>
         <div class="toolbar-right">
           <m3e-form-field variant="outlined" class="sort-field">
+            <label slot="label" for="server">My server</label>
+            ${icon('dns', { slot: 'prefix' })}
+            <m3e-select id="server">
+              <m3e-option value=""${!prefs().server ? ' selected' : ''}>Any version</m3e-option>
+              ${PUMPKIN_VERSIONS.map((v) => `<m3e-option value="${v}"${prefs().server === v ? ' selected' : ''}>Pumpkin ${v}</m3e-option>`).join('')}
+            </m3e-select>
+          </m3e-form-field>
+          <m3e-form-field variant="outlined" class="sort-field">
             <label slot="label" for="sort">Sort by</label>
             <m3e-select id="sort">
+              <m3e-option value="relevance"${s.sort === 'relevance' ? ' selected' : ''}>Best match</m3e-option>
               <m3e-option value="popular"${s.sort === 'popular' ? ' selected' : ''}>Most downloaded</m3e-option>
               <m3e-option value="followers"${s.sort === 'followers' ? ' selected' : ''}>Most followed</m3e-option>
               <m3e-option value="updated"${s.sort === 'updated' ? ' selected' : ''}>Recently updated</m3e-option>
@@ -108,22 +151,23 @@ const browse: Page = {
       out.innerHTML = results(s);
       stopReveal();
       stopReveal = reveal(out);
+      applyDownloads(out);
       const n = filter(s).length;
       root.querySelector('#count')!.textContent = `${n} ${n === 1 ? 'port' : 'ports'}`;
       const q = new URLSearchParams();
       if (s.q) q.set('q', s.q);
       if (s.cats.length) q.set('cat', s.cats.join(','));
-      if (s.sort !== 'popular') q.set('sort', s.sort);
+      if (s.sort !== 'relevance') q.set('sort', s.sort);
       if (s.saved) q.set('saved', '1');
+      if (s.safe) q.set('safe', '1');
+      if (s.works) q.set('works', '1');
       setQuery(q);
       out.querySelector('#clear-filters')?.addEventListener('click', clear);
       if (!n && s.q) buddySay('Nothing here… try fewer words?', 'sad');
     };
     const input = root.querySelector<HTMLInputElement>('[data-page-search]')!;
     const clear = () => {
-      s.q = '';
-      s.cats = [];
-      s.saved = false;
+      Object.assign(s, { q: '', cats: [], saved: false, safe: false, works: false });
       input.value = '';
       root.querySelectorAll<El>('#cats m3e-filter-chip').forEach((ch) => (ch.selected = false));
       update();
@@ -141,15 +185,22 @@ const browse: Page = {
       update();
     });
     root.querySelector('#cats')!.addEventListener('change', (e) => {
-      const chips = [...(e.currentTarget as HTMLElement).querySelectorAll<El>('m3e-filter-chip')];
-      const on = chips.filter((ch) => ch.selected).map((ch) => ch.getAttribute('value')!);
+      const on = [...(e.currentTarget as HTMLElement).querySelectorAll<El>('m3e-filter-chip')].filter((ch) => ch.selected).map((ch) => ch.getAttribute('value')!);
       s.saved = on.includes('__saved');
-      s.cats = on.filter((v) => v !== '__saved');
+      s.safe = on.includes('__safe');
+      s.works = on.includes('__works');
+      if (s.works && !prefs().server) buddySay('Pick your Pumpkin version under “My server” first.', 'talk');
+      s.cats = on.filter((v) => !v.startsWith('__'));
+      update();
+    });
+    root.querySelector('#server')!.addEventListener('change', (e) => {
+      const v = (e.currentTarget as El).value;
+      setPrefs({ server: typeof v === 'string' && v ? v : null });
       update();
     });
     root.querySelector('#sort')!.addEventListener('change', (e) => {
       const v = (e.currentTarget as El).value;
-      if (typeof v === 'string') {
+      if (typeof v === 'string' && v) {
         s.sort = v as Sort;
         update();
       }
@@ -162,7 +213,6 @@ const browse: Page = {
       update();
     });
     out.querySelector('#clear-filters')?.addEventListener('click', clear);
-    // un-saving a plugin while viewing Saved should drop it from the list
     const off = onPrefs(() => {
       if (s.saved) update();
     });
@@ -179,8 +229,10 @@ function readState(q: URLSearchParams): State {
   return {
     q: q.get('q') ?? '',
     cats: (q.get('cat') ?? '').split(',').filter((c) => c in CATEGORIES),
-    sort: ['popular', 'updated', 'name', 'followers'].includes(sort) ? sort : 'popular',
+    sort: ['relevance', 'popular', 'updated', 'name', 'followers'].includes(sort) ? sort : 'relevance',
     saved: q.get('saved') === '1',
+    safe: q.get('safe') === '1',
+    works: q.get('works') === '1',
     view: prefs().view,
   };
 }

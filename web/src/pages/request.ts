@@ -6,6 +6,8 @@ import { speaker } from '../components/cards';
 import { ROADMAP } from '../data/roadmap';
 import { PLUGINS } from '../data/plugins';
 import { buddySay } from '../components/buddy';
+import { portRequests, type PortRequest } from '../lib/github';
+import { STAGES } from '../data/roadmap';
 
 type El = HTMLElement & { checked?: boolean; value?: string | null };
 
@@ -141,6 +143,7 @@ const request: Page = {
           ${speaker('claude/oracle', 'Type a plugin name and I’ll search Modrinth for you.')}
         </div>
         <p class="muted small powered">${brand('modrinth', { size: 14 })} Search powered by the public Modrinth API.</p>
+        <section class="top-req" id="top-req" aria-label="Most wanted requests"></section>
       </div>
     </div>`;
   },
@@ -173,6 +176,7 @@ const request: Page = {
         selected = project.slug;
         out.innerHTML = preview(project, hits.get(project.slug)?.author);
         field.removeAttribute('error');
+        markDuplicate(project.slug);
         buddySay(`Found ${project.title}!`, 'happy');
       } catch (err) {
         if ((err as Error).name === 'AbortError') return;
@@ -204,6 +208,7 @@ const request: Page = {
       clearTimeout(st);
       if (selected && hits.get(selected)?.title === term) return; // the input now shows the picked title
       selected = null;
+      markDuplicate('');
       field.removeAttribute('error');
       if (isLink(term)) {
         ac.innerHTML = '';
@@ -241,6 +246,12 @@ const request: Page = {
         input.focus();
         return;
       }
+      const dupe = findDupe(slug);
+      if (dupe) {
+        window.open(dupe.url, '_blank', 'noopener');
+        buddySay('Already requested, so we opened it. Give it a 👍!', 'happy');
+        return;
+      }
       const why = root.querySelector<HTMLTextAreaElement>('#why')!.value.trim();
       const prio = [...root.querySelectorAll<El>('#prio m3e-button-segment')].find((s) => s.checked)?.getAttribute('value') ?? 'Nice to have';
       const name = project?.title ?? hits.get(slug)?.title ?? slug;
@@ -263,6 +274,41 @@ const request: Page = {
       window.open(url, '_blank', 'noopener');
       buddySay('Request drafted! Courier is on it.', 'happy');
     });
+
+    // existing requests: top list + duplicate detection
+    let requests: PortRequest[] = [];
+    const findDupe = (slug: string) => requests.find((r) => r.open && r.modrinth === slug.toLowerCase());
+    const send = root.querySelector<HTMLElement>('#send')!;
+    const sendLabel = send.innerHTML;
+    const markDuplicate = (slug: string) => {
+      const d = findDupe(slug);
+      send.innerHTML = d ? `${icon('thumb_up', { slot: 'icon' })}Upvote existing request` : sendLabel;
+      if (!d) return;
+      out.querySelector('.mr-body')?.insertAdjacentHTML('beforeend',
+        `<m3e-callout variant="secondary">${icon('how_to_vote', { slot: 'icon' })}<span slot="label">Already requested (#${d.number})</span>
+          It has ${d.votes} 👍 so far and is <strong>${esc(d.stage === 'requested' ? 'waiting for review' : STAGES[d.stage].label.toLowerCase())}</strong>. Upvote it instead of filing a duplicate.
+          <a href="${esc(d.url)}" target="_blank" rel="noopener">Open on GitHub</a></m3e-callout>`);
+    };
+    const top = root.querySelector<HTMLElement>('#top-req')!;
+    portRequests()
+      .then((all) => {
+        requests = all;
+        if (selected) markDuplicate(selected);
+        const wanted = all.filter((r) => r.open && r.stage !== 'shipped').sort((a, b) => b.votes - a.votes).slice(0, 5);
+        if (!wanted.length) return;
+        top.innerHTML = `<h3 class="title">${icon('local_fire_department')} Most wanted</h3>
+          <m3e-list variant="segmented">${wanted.map((r) => `
+            <m3e-list-item>
+              <span slot="leading" class="tr-votes">${icon('thumb_up')}${r.votes}</span>
+              <a class="li-link" href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.name)}</a>
+              <span slot="supporting-text">${esc(r.stage === 'requested' ? 'Waiting for review' : STAGES[r.stage].label)} · #${r.number}</span>
+              <span slot="trailing">${brand('github', { size: 18 })}</span>
+            </m3e-list-item>`).join('')}</m3e-list>
+          <p class="muted small">Upvote with 👍 on GitHub. The most wanted get ported first.</p>`;
+      })
+      .catch(() => {
+        /* offline or rate limited: the form still works */
+      });
 
     return () => {
       searchCtrl?.abort();

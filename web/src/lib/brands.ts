@@ -19,5 +19,5 @@ export function brand(name: Brand, opts: { size?: number; tint?: boolean; slot?:
   const b = BRANDS[name];
   const size = opts.size ?? 20;
   const fill = opts.tint && b.color ? b.color : 'currentColor';
-  return `<svg class="brand brand-${name} ${esc(opts.cls ?? '')}"${opts.slot ? ` slot="${esc(opts.slot)}"` : ''} viewBox="0 0 24 24" width="${size}" height="${size}" role="img" aria-label="${b.label}"><path fill="${fill}" d="${b.d}"/></svg>`;
+  return `<svg class="brand-mark brand-${name} ${esc(opts.cls ?? '')}"${opts.slot ? ` slot="${esc(opts.slot)}"` : ''} viewBox="0 0 24 24" width="${size}" height="${size}" role="img" aria-label="${b.label}"><path fill="${fill}" d="${b.d}"/></svg>`;
 }

@@ -31,7 +31,7 @@ const docs: Page = {
 
         <h2 id="drop-in">2. Drop it into plugins/</h2>
         <p>Put the file in the <code>plugins/</code> folder next to your Pumpkin server binary. Pumpkin scans this folder on start-up and loads every <code>.wasm</code> component it finds.</p>
-        ${codeBlock('server/\n├── pumpkin\n├── pumpkin.toml\n└── plugins/\n    └── hearth-homes-1.2.0.wasm', 'folder layout')}
+        ${codeBlock('server/\n├── pumpkin\n├── pumpkin.toml\n└── plugins/\n    └── my-port-1.0.0.wasm', 'folder layout')}
 
         <h2 id="configure">3. Configure pumpkin.toml</h2>
         <p>Plugins are controlled by the <code>[plugins]</code> section. The defaults work for most servers:</p>

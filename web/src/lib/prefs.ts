@@ -12,6 +12,13 @@ export interface Prefs {
   favorites: string[];
   recent: string[];
   greeted: boolean;
+  /** The visitor's Pumpkin server version, for compatibility badges. */
+  server: string | null;
+  /** Up to 3 plugin slugs queued for side-by-side comparison. */
+  compare: string[];
+  /** ISO time of this visit and of the previous one ("new since your last visit"). */
+  lastVisit: string | null;
+  prevVisit: string | null;
 }
 
 const KEY = 'ace:prefs';
@@ -25,6 +32,10 @@ const DEFAULTS: Prefs = {
   favorites: [],
   recent: [],
   greeted: false,
+  server: null,
+  compare: [],
+  lastVisit: null,
+  prevVisit: null,
 };
 
 let state: Prefs = load();
@@ -64,6 +75,32 @@ export function toggleFavorite(slug: string): boolean {
   const on = !isFavorite(slug);
   setPrefs({ favorites: on ? [...state.favorites, slug] : state.favorites.filter((s) => s !== slug) });
   return on;
+}
+
+export const MAX_COMPARE = 3;
+
+export function toggleCompare(slug: string): 'added' | 'removed' | 'full' {
+  if (state.compare.includes(slug)) {
+    setPrefs({ compare: state.compare.filter((s) => s !== slug) });
+    return 'removed';
+  }
+  if (state.compare.length >= MAX_COMPARE) return 'full';
+  setPrefs({ compare: [...state.compare, slug] });
+  return 'added';
+}
+
+/** Record this visit. A gap of 30+ minutes starts a new visit. */
+export function markVisit(): void {
+  const now = new Date();
+  const last = state.lastVisit ? new Date(state.lastVisit) : null;
+  if (!last) setPrefs({ lastVisit: now.toISOString() });
+  else if (now.getTime() - last.getTime() > 30 * 60 * 1000) setPrefs({ prevVisit: state.lastVisit, lastVisit: now.toISOString() });
+  else setPrefs({ lastVisit: now.toISOString() });
+}
+
+/** True when `iso` (a release date) is newer than the visitor's previous visit. */
+export function isNew(iso: string): boolean {
+  return !!state.prevVisit && new Date(iso).getTime() > new Date(state.prevVisit).getTime();
 }
 
 export function pushRecent(slug: string): void {

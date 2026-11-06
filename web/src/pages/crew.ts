@@ -24,7 +24,7 @@ const crew: Page = {
       <div class="band-head"><div><h2 class="headline">${esc(SETS[s].label)}</h2><p class="muted">${esc(SETS[s].blurb)}</p></div></div>
       <div class="crew-grid">
         ${CREW.filter((c) => c.set === s).map((c) => `
-        <button type="button" class="crew-card" data-reveal data-line="${esc(c.line)}">
+        <button type="button" class="crew-card" id="crew-${c.set}-${c.id}" data-reveal data-line="${esc(c.line)}">
           <span class="crew-art">${sprite(`${c.set}/${c.id}`, 2)}</span>
           <span class="crew-name">${esc(c.name)}</span>
           <span class="crew-role muted">${esc(c.role)}</span>
@@ -46,6 +46,9 @@ const crew: Page = {
         b.classList.toggle('talking');
       }),
     );
+    // arriving from the command palette (/crew#crew-set-id): wave hello
+    const target = location.hash && root.querySelector<HTMLButtonElement>(location.hash);
+    if (target) setTimeout(() => target.click(), 400);
     return reveal(root);
   },
 };

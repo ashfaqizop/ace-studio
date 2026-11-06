@@ -4,6 +4,8 @@ import { navigate } from '../lib/router';
 import { prefs, onPrefs } from '../lib/prefs';
 import { appearanceDialog, mountAppearance } from './appearance';
 import { brand } from '../lib/brands';
+import { paletteDialog, mountPalette } from './palette';
+import { whatsNewDialog, mountWhatsNew } from './whatsnew';
 import { sprite } from '../data/crew';
 
 export const NAV: { href: string; label: string; icon: string; mobile: boolean }[] = [
@@ -38,6 +40,16 @@ export function renderShell(root: HTMLElement): HTMLElement {
           </m3e-search-bar>
         </form>
         <div class="topactions">
+          <m3e-icon-button id="palette-btn" aria-label="Command palette (Ctrl K)">${icon('keyboard_command_key')}</m3e-icon-button>
+          <m3e-tooltip for="palette-btn">Command palette · Ctrl K</m3e-tooltip>
+          <span class="saved-wrap">
+            <m3e-icon-button id="new-btn" aria-label="What’s new">
+              ${icon('new_releases')}
+              <m3e-dialog-trigger for="whatsnew"></m3e-dialog-trigger>
+            </m3e-icon-button>
+            <m3e-badge for="new-btn" class="new-badge" size="small" hidden></m3e-badge>
+          </span>
+          <m3e-tooltip for="new-btn">What’s new</m3e-tooltip>
           <span class="saved-wrap">
             <m3e-icon-button id="saved-btn" href="/plugins?saved=1" aria-label="Saved plugins">${icon('favorite')}</m3e-icon-button>
             <m3e-badge for="saved-btn" class="saved-badge" size="small" hidden></m3e-badge>
@@ -78,9 +90,13 @@ export function renderShell(root: HTMLElement): HTMLElement {
     </div>
     <m3e-nav-bar class="bottomnav" mode="compact" aria-label="Main">${NAV.filter((n) => n.mobile).map(navItem).join('')}</m3e-nav-bar>
   </div>
-  ${appearanceDialog()}`;
+  ${appearanceDialog()}
+  ${paletteDialog()}
+  ${whatsNewDialog()}`;
 
   mountAppearance(root);
+  mountPalette(root);
+  mountWhatsNew(root);
   wireSearch(root);
   const syncSaved = () => {
     const b = root.querySelector<HTMLElement>('.saved-badge')!;

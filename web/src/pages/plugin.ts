@@ -1,11 +1,12 @@
 import type { Page, Ctx } from '../lib/router';
 import { pluginBySlug, latest, CATEGORIES, PLUGINS, type Plugin } from '../data/plugins';
 import { char, sprite } from '../data/crew';
-import { pluginIcon, favButton, emptyState, speaker, pluginCard } from '../components/cards';
+import { pluginIcon, favButton, compareButton, compatBadge, permBadge, newBadge, emptyState, speaker, pluginCard } from '../components/cards';
 import { ago, bytes, codeBlock, date, esc, icon, md, num } from '../lib/html';
 import { assetUrl, GITHUB } from '../config';
-import { pushRecent } from '../lib/prefs';
-import { reveal } from '../lib/ui';
+import { pushRecent, prefs, setPrefs, isNew } from '../lib/prefs';
+import { compat, cmpVersion, PUMPKIN_VERSIONS } from '../lib/compat';
+import { reveal, applyDownloads } from '../lib/ui';
 import { brand } from '../lib/brands';
 import { logo } from '../components/shell';
 
@@ -36,13 +37,14 @@ function header(p: Plugin): string {
     <div class="p-hero-icon">${pluginIcon(p, 112)}</div>
     <div class="p-hero-copy">
       <div class="p-badges">
+        ${newBadge(p)}<span data-compat-badge>${compatBadge(p)}</span>${permBadge(p)}
         <span class="tag">${icon('gavel')}${esc(p.license)}</span>
         ${v.channel === 'beta' ? `<span class="tag tag-tertiary">${icon('experiment')}Beta</span>` : ''}
         <span class="tag">${brand('webassembly', { size: 14, tint: true })}WASM</span>
       </div>
       <h1 class="display-md">${esc(p.name)}</h1>
       <p class="lead">${esc(p.summary)}</p>
-      <p class="muted p-meta">${icon('download')}${num(p.downloads)} downloads · ${icon('favorite')}${num(p.followers)} followers · ${icon('update')}updated ${ago(v.date)}</p>
+      <p class="muted p-meta">${icon('download')}<span data-dl="${esc(p.slug)}">${num(p.downloads)}</span> downloads · ${icon('favorite')}${num(p.followers)} followers · ${icon('update')}updated ${ago(v.date)}</p>
     </div>
     <div class="p-actions">
       <m3e-split-button variant="filled" size="large" class="dl-split">
@@ -57,6 +59,7 @@ function header(p: Plugin): string {
       </m3e-menu>
       <div class="p-actions-row">
         ${favButton(p.slug, 'tonal')}
+        ${compareButton(p.slug, 'tonal')}
         <m3e-icon-button variant="tonal" data-share="/plugin/${esc(p.slug)}" id="share-btn" aria-label="Share">${icon('share')}</m3e-icon-button>
         <m3e-tooltip for="share-btn">Share</m3e-tooltip>
         <m3e-button variant="outlined" data-copy="${esc(tomlFor(p))}" data-copy-msg="pumpkin.toml snippet copied">${icon('content_paste', { slot: 'icon' })}Copy config</m3e-button>
@@ -90,12 +93,14 @@ function tabs(p: Plugin): string {
             <strong>v${esc(v.version)}</strong>
             ${i === 0 ? '<span class="tag tag-primary">Latest</span>' : ''}
             ${v.channel === 'beta' ? '<span class="tag tag-tertiary">Beta</span>' : ''}
+            ${isNew(v.date) ? `<span class="tag tag-new">${icon('new_releases', { filled: true })}New</span>` : ''}
+            ${prefs().server ? (cmpVersion(prefs().server!, v.pumpkin) >= 0 ? `<span class="tag tag-safe">${icon('check_circle', { filled: true })}Works on your server</span>` : `<span class="tag tag-warn">${icon('upgrade')}Needs Pumpkin ${esc(v.pumpkin)}+</span>`) : ''}
             <span class="muted">${date(v.date)} · Pumpkin ${esc(v.pumpkin)} · MC ${esc(v.minecraft)}</span>
           </span>
           <div class="ver-body">
             <div class="prose">${md(v.changelog)}</div>
             <div class="ver-file">
-              ${icon('deployed_code')}<code>${esc(v.file)}</code><span class="muted">${bytes(v.size)}</span>
+              ${icon('deployed_code')}<code>${esc(v.file)}</code><span class="muted">${bytes(v.size)}</span><span class="muted" data-dl-file="${esc(v.file)}"></span>
               <m3e-button variant="tonal" href="${esc(assetUrl(p.slug, v.version, v.file))}" target="_blank" rel="noopener">${icon('download', { slot: 'icon' })}Download</m3e-button>
             </div>
           </div>
@@ -161,6 +166,15 @@ function aside(p: Plugin): string {
           <dt>${brand('webassembly', { size: 16, tint: true })}Runtime</dt><dd>WASM component</dd>
           <dt>${icon('sd_card')}Size</dt><dd>${bytes(v.size)}</dd>
         </dl>
+        <m3e-form-field variant="outlined" class="aside-server">
+          <label slot="label" for="p-server">My server</label>
+          ${icon('dns', { slot: 'prefix' })}
+          <m3e-select id="p-server">
+            <m3e-option value=""${!prefs().server ? ' selected' : ''}>Not set</m3e-option>
+            ${PUMPKIN_VERSIONS.map((x) => `<m3e-option value="${x}"${prefs().server === x ? ' selected' : ''}>Pumpkin ${x}</m3e-option>`).join('')}
+          </m3e-select>
+        </m3e-form-field>
+        <div class="aside-compat" data-compat-badge>${compatBadge(p)}</div>
       </div>
     </m3e-card>
     <m3e-card variant="filled">
@@ -202,12 +216,21 @@ const plugin: Page = {
         ${aside(p)}
       </div>
       ${more.length ? `<section class="band"><div class="band-head"><h2 class="headline">More like this</h2></div>
-        <div class="grid">${more.map(pluginCard).join('')}</div></section>` : ''}
+        <div class="grid">${more.map((x) => pluginCard(x)).join('')}</div></section>` : ''}
     </div>`;
   },
   mount(root, c) {
     const p = pluginBySlug(c.params.slug);
-    if (p) pushRecent(p.slug);
+    if (!p) return;
+    pushRecent(p.slug);
+    applyDownloads(root);
+    root.querySelector('#p-server')?.addEventListener('change', (e) => {
+      const v = (e.currentTarget as HTMLElement & { value?: string | null }).value;
+      setPrefs({ server: typeof v === 'string' && v ? v : null });
+      root.querySelectorAll<HTMLElement>('[data-compat-badge]').forEach((el) => (el.innerHTML = compatBadge(p)));
+      const c2 = compat(p);
+      if (c2.state === 'older') root.querySelector<HTMLElement>('[data-compat-badge].aside-compat')!.insertAdjacentHTML('beforeend', `<p class="small muted">The latest release needs a newer Pumpkin. Grab v${esc(c2.version.version)} from the Versions tab.</p>`);
+    });
     return reveal(root);
   },
 };

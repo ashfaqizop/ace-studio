@@ -1,4 +1,5 @@
 import type { CharRef } from './crew';
+import { plugins as demoPlugins } from 'virtual:demo-data';
 
 export interface PluginVersion {
   version: string;
@@ -66,11 +67,14 @@ Shown on the Overview tab.',
  *     followers: 0,
  *     permissions: [{ id: 'fs:read:data', why: 'Reads its config.' }],
  *     mapping: [{ from: 'PlayerJoinEvent', to: 'PlayerJoinEvent' }],
- *     versions: [{ version: '1.0.0', date: '2026-11-06', pumpkin: '0.1.0-dev', minecraft: '1.21.11',
+ *     versions: [{ version: '1.0.0', date: '2026-11-06', pumpkin: '0.2.1', minecraft: '1.21.11',
  *                  file: 'my-port-1.0.0.wasm', size: 0, changelog: '- First Pumpkin release' }],
  *   },
  */
-export const PLUGINS: Plugin[] = [];
+export const PLUGINS: Plugin[] = [
+  // real ports go here
+  ...demoPlugins, // dev-only demo entries (empty in production)
+];
 
 export const pluginBySlug = (slug: string) => PLUGINS.find((p) => p.slug === slug);
 export const latest = (p: Plugin) => p.versions[0];

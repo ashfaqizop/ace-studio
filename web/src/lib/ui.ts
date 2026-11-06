@@ -1,7 +1,9 @@
 import { M3eSnackbar } from '@m3e/web/snackbar';
 import { buddySay } from '../components/buddy';
-import { toggleFavorite } from './prefs';
-import { pluginBySlug } from '../data/plugins';
+import { toggleFavorite, toggleCompare, MAX_COMPARE } from './prefs';
+import { pluginBySlug, PLUGINS } from '../data/plugins';
+import { assetDownloads } from './github';
+import { num } from './html';
 
 export function toast(message: string): void {
   M3eSnackbar.open(message, true, { duration: 3200 });
@@ -46,6 +48,22 @@ export function installGlobalActions(): void {
           const name = pluginBySlug(slug)?.name ?? 'Plugin';
           toast(on ? `${name} saved` : `${name} removed from saved`);
           if (on) buddySay('Saved for later ♥', 'happy');
+          return;
+        }
+        if (n.dataset.compare != null) {
+          e.preventDefault();
+          e.stopPropagation();
+          const slug = n.dataset.compare;
+          const res = toggleCompare(slug);
+          const on = res === 'added';
+          document.querySelectorAll<HTMLElement>(`[data-compare="${CSS.escape(slug)}"]`).forEach((b) => {
+            const sel = res === 'full' ? false : on;
+            b.toggleAttribute('selected', sel);
+            (b as HTMLElement & { selected?: boolean }).selected = sel;
+          });
+          const name = pluginBySlug(slug)?.name ?? 'Plugin';
+          if (res === 'full') toast(`You can compare up to ${MAX_COMPARE} ports at once`);
+          else toast(on ? `${name} added to compare` : `${name} removed from compare`);
           return;
         }
         if (n.dataset.share != null) {
@@ -105,4 +123,39 @@ export function reveal(root: HTMLElement): () => void {
     io.observe(e);
   });
   return () => io.disconnect();
+}
+
+/* ---------- Live download counts from GitHub release assets ---------- */
+
+let live: Map<string, number> | null = null;
+
+/** Total downloads for a plugin: the larger of the catalog figure and the live asset counts. */
+export function downloadsFor(slug: string): number {
+  const p = pluginBySlug(slug);
+  if (!p) return 0;
+  const sum = live ? p.versions.reduce((n, v) => n + (live!.get(v.file) ?? 0), 0) : 0;
+  return Math.max(p.downloads, sum);
+}
+
+/** Fill [data-dl] (per plugin) and [data-dl-file] (per release asset) with live counts. */
+export function applyDownloads(root: ParentNode = document): void {
+  if (!live) return;
+  root.querySelectorAll<HTMLElement>('[data-dl]').forEach((el) => (el.textContent = num(downloadsFor(el.dataset.dl!))));
+  root.querySelectorAll<HTMLElement>('[data-dl-file]').forEach((el) => {
+    const n = live!.get(el.dataset.dlFile!);
+    if (n != null) el.textContent = `${num(n)} downloads`;
+  });
+}
+
+/** Fetch release stats once per session (cached) and patch the current page. */
+export function loadDownloads(): void {
+  if (!PLUGINS.length) return;
+  assetDownloads()
+    .then((m) => {
+      live = m;
+      applyDownloads();
+    })
+    .catch(() => {
+      /* rate-limited or offline: keep catalog numbers */
+    });
 }
