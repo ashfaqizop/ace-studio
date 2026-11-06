@@ -13,7 +13,7 @@ jobs:
     env:
       WASI_SDK: /opt/wasi-sdk-25.0-x86_64-linux
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -53,7 +53,7 @@ jobs:
               done
           cp Cargo.lock ../dist/Cargo.lock
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: plugins
           path: dist/

@@ -78,18 +78,6 @@ pub fn role_id_by_name(state: &State, name: &str) -> Option<String> {
     state.roles.iter().find(|(_, r)| r.name.eq_ignore_ascii_case(name)).map(|(id, _)| id.clone())
 }
 
-/// Opens (or reuses) a DM channel with `user` and sends `content`.
-pub fn dm(state: &mut State, user: &str, content: String) {
-    let req = bot(state, Method::Post, "/users/@me/channels".into())
-        .json(&json!({ "recipient_id": user }))
-        .then(move |s, resp| {
-            if let Some(channel) = resp.json().and_then(|v| v["id"].as_str().map(String::from)) {
-                send_text(s, &channel, &content);
-            }
-        });
-    state.http.send(req);
-}
-
 /// Makes sure we have a webhook named "Ace SRV" in `channel` (needs Manage Webhooks), creating it if missing.
 pub fn ensure_webhook(state: &mut State, channel: &str) {
     if state.webhooks.contains_key(channel) || !state.webhook_pending.insert(channel.to_string()) {

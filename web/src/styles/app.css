@@ -237,7 +237,12 @@ em { font-style: italic; color: var(--c-primary); }
   display: inline-grid; place-items: center; flex: none;
   transition: transform 0.7s var(--spring);
 }
-.plugin-icon m3e-icon { --m3e-icon-size: calc(var(--m3e-shape-size, 56px) * 0.46); }
+/* m3e-shape lays its slot out inside a full-size wrapper in its shadow DOM, so centre the symbol explicitly */
+.plugin-icon > m3e-icon, m3e-shape.mr-icon > m3e-icon {
+  --m3e-icon-size: calc(var(--m3e-shape-size, 56px) * 0.46);
+  position: absolute; left: 50%; top: 50%; translate: -50% -50%;
+  display: grid; place-items: center; line-height: 1;
+}
 
 .plugin-card {
   --m3e-card-shape: var(--radius-xl);

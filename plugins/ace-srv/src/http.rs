@@ -38,10 +38,6 @@ impl Response {
     pub fn json(&self) -> Option<serde_json::Value> {
         serde_json::from_slice(&self.body).ok()
     }
-
-    pub fn text(&self) -> String {
-        String::from_utf8_lossy(&self.body).into_owned()
-    }
 }
 
 pub type Callback = Box<dyn FnOnce(&mut State, Response) + Send>;
