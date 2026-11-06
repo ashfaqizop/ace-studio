@@ -46,8 +46,9 @@ export interface Plugin {
    * `waiting-api`: attempted, but Pumpkin's plugin API can't support it yet. Listed on the site with what's missing,
    * never built. `versions` is empty until it ships.
    * `waiting-permission`: the original isn't openly licensed, so it waits for its author's written permission.
+   * `author-declined`: the author said no to a port; only a clean-room implementation could ever be built.
    */
-  status?: 'waiting-api' | 'waiting-permission';
+  status?: 'waiting-api' | 'waiting-permission' | 'author-declined';
   waiting?: {
     /** When the port was attempted (YYYY-MM-DD). */
     since: string;

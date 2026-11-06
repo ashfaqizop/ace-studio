@@ -180,6 +180,18 @@ Silk Touch, no tool wear).
 
 ## Ace LP (LuckPerms): built, 0.1.0 not released yet
 
+**In progress (paused 2026-11-06, uncommitted in the working tree):** a full-parity rewrite. The user wants *all* of
+LuckPerms. Key finding: Pumpkin fires a blocking `PlayerPermissionCheckEvent` for every player check and uses
+`event.result` (`pumpkin-core/src/entity/player.rs` `has_permission_at_level`; the host copies `permission_result` back),
+so Ace LP can answer checks itself, like LuckPerms' Permissible. That makes verbose, regex, shorthand and global `*`
+possible. New files: `config.rs` (+ `defaults/config.toml`, every LP option that applies), `calc.rs` (processors),
+`verbose.rs` (filter grammar + viewer payload), `log.rs` (action log), plus a rewritten `resolve.rs` / `state.rs` and
+`storage.rs` changes. Still to do: rewrite `commands.rs` for the full tree (exact LP syntax + per-command
+`ace-lp:` permissions), wire `lib.rs` (check-event handler, op actions), then phase 2 (editor, tree, export/import,
+search, bulkupdate, log commands, translations), phase 3 (yaml/hocon/toml/combined, sqlite, mysql/mariadb, postgres,
+mongodb, split storage, redis/nats/rabbitmq/sql messaging) and phase 4 (IPC write API + events). H2 can't run (Java),
+so SQLite replaces it. The working tree doesn't compile until `commands.rs` and `lib.rs` are updated.
+
 `plugins/ace-lp/`, MIT; upstream is cloned to `plugins/.cache/luckperms` @ b878ae9. Pumpkin has no hook to answer
 permission checks, but `player.set-permission` writes a per-player attachment that every check reads first
 (`pumpkin-util/src/permission.rs`: exact node, then `ns:*` and `prefix.*` wildcards, children, then defaults). Ace LP
@@ -207,7 +219,15 @@ plugin sees them. The core has `ConnectionPacketReceivedEvent`/`ConnectionPacket
 login/config translation, but they're not in WIT v0.1/v0.2. Play-phase `PacketReceived/SentEvent` are in WIT. Comments
 mention a native `pumpkin-java-multiversion`, so Pumpkin may do this itself.
 
-## Ace SVC (Simple Voice Chat): ON HOLD for licence, listed as `waiting-permission` (`plugins/ace-svc/ace.json`)
+## Ace SVC (Simple Voice Chat): DECLINED by the author (2026-11-06), listed as `author-declined`
+
+Max Henkel replied on the SVC Discord: "you are not allowed to copy any of the mods code. If you do a cleanroom
+implementation thats fine", then, asked about translating: "No copying code please". So: never port, translate or
+read his source. Only a clean-room implementation is allowed: a spec built from traffic captures (a real client
+against a Paper + SVC test server) and public docs, then code written from that spec only. It isn't started. Ace
+Plasmo is the voice option. Delete `plugins/.cache/svc` before any clean-room work.
+
+### Earlier notes
 
 Simple Voice Chat (henkelmax) is **All Rights Reserved** (licence file + Modrinth `LicenseRef-All-Rights-Reserved`).
 Don't translate or ship it without Max Henkel's written permission. The user is contacting him (SVC Discord

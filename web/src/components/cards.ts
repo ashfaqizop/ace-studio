@@ -80,6 +80,18 @@ export function pluginCard(p: Plugin, nameHtml?: string): string {
 /** Wording for a frozen port: blocked on the Pumpkin plugin API, or on the original author's permission. */
 export function waitKind(p: Plugin) {
   const n = p.waiting?.needs.length ?? 0;
+  if (p.status === 'author-declined')
+    return {
+      badge: 'Port declined by author',
+      title: "The original's author doesn't allow ports or translations of their code",
+      icon: 'block',
+      state: 'Not planned',
+      count: 'Port declined',
+      tab: 'Why it&rsquo;s not planned',
+      callout: 'We asked, and the original&rsquo;s author doesn&rsquo;t allow ports or translations of their code. We respect that, so nothing of theirs will be ported.',
+      speech: 'The author said no to a port, so none of their code will be used. Here’s what that leaves.',
+      footnote: 'A clean-room implementation (our own code, written only from observed behaviour, never from the original source) is the only route left. It isn&rsquo;t started.',
+    };
   return p.status === 'waiting-permission'
     ? {
         badge: 'Waiting on author permission',

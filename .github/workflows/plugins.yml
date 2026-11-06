@@ -25,12 +25,12 @@ jobs:
             id=$(basename "$(dirname "$manifest")")
             jq -e --arg id "$id" '.slug == $id' "$manifest" > /dev/null \
               || { echo "::error file=$manifest::slug must be \"$id\""; status=1; }
-            if jq -e '.status == "waiting-api" or .status == "waiting-permission"' "$manifest" > /dev/null; then
+            if jq -e '.status == "waiting-api" or .status == "waiting-permission" or .status == "author-declined"' "$manifest" > /dev/null; then
               # listed on the site only, never built: needs a reason and what's missing
               jq -e '(.waiting.since | length > 0) and (.waiting.needs | length > 0) and (.versions | length == 0)' "$manifest" > /dev/null \
                 || { echo "::error file=$manifest::waiting ports need waiting.since, waiting.needs and no versions"; status=1; }
             elif jq -e 'has("status")' "$manifest" > /dev/null; then
-              echo "::error file=$manifest::unknown status (use waiting-api or waiting-permission)"; status=1
+              echo "::error file=$manifest::unknown status (use waiting-api, waiting-permission or author-declined)"; status=1
             else
               jq -e '.versions | length > 0' "$manifest" > /dev/null \
                 || { echo "::error file=$manifest::versions must not be empty (or set status: waiting-api)"; status=1; }
