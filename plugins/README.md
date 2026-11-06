@@ -18,6 +18,9 @@ compiled to WebAssembly components for [Pumpkin](https://github.com/Pumpkin-MC/P
   `"versions": []` and `"waiting": { "since", "needs": [{ "api", "why" }], "tracking"? }`, and no crate. The site lists it
   as **Waiting on Pumpkin Plugin API**, with what's missing. When the API lands, add the crate and the first version, and
   remove `status`/`waiting`.
+- **Closed licences wait for permission.** If the original is All Rights Reserved (or otherwise not open), don't port
+  it: list it with `"status": "waiting-permission"` (same `waiting` fields, `needs` = the permission) and no LICENSE
+  copy. It's built only after the author agrees in writing, and the listing comes down if they refuse.
 - **Site listing:** each port has an `ace.json` (the Ace Studio catalog entry). Running `npm run dev` or
   `npm run build` in `web/` copies it to `web/src/data/ports/`, which is committed because Vercel only sees `web/`.
   CI fails if the two differ or if the manifest version doesn't match `Cargo.toml`.

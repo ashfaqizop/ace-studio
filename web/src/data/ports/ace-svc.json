@@ -1,0 +1,32 @@
+{
+  "slug": "ace-svc",
+  "name": "Ace SVC",
+  "summary": "Proximity voice chat for Pumpkin servers, working with the Simple Voice Chat client mod. Waiting on the author's permission.",
+  "description": "## Proximity voice, on Pumpkin\n\nAce SVC is a planned Pumpkin port of the server side of **Simple Voice Chat** by Max Henkel. Players would keep using the Simple Voice Chat client mod they already have, and Pumpkin servers would speak its protocol.\n\n- **Proximity voice**: hear players near you, quieter with distance\n- **Groups**: private or open voice groups, whispering and push-to-talk, all from the client mod\n- **No client changes**: the official Simple Voice Chat mod connects as usual\n\n## Why it isn't out yet\n\nSimple Voice Chat is **All Rights Reserved**, not open source, so a port needs its author's written permission. We've asked and haven't ported any of it yet. If Max agrees, we build it to his terms; if he says no, this listing comes down.\n\nOn the technical side Pumpkin's plugin API looks ready: plugins can bind a UDP port, talk to client mods over plugin channels and track player positions.",
+  "categories": ["chat", "social"],
+  "icon": { "shape": "pill", "symbol": "mic" },
+  "license": "Author's terms",
+  "original": {
+    "name": "Simple Voice Chat",
+    "author": "Max Henkel",
+    "url": "https://modrinth.com/plugin/simple-voice-chat",
+    "license": "All Rights Reserved"
+  },
+  "portedBy": "claude/scout",
+  "status": "waiting-permission",
+  "waiting": {
+    "since": "2026-11-06",
+    "needs": [
+      { "api": "Written permission from Max Henkel", "why": "Simple Voice Chat is All Rights Reserved, so translating it into a Pumpkin plugin needs its author's consent. We've asked; nothing is ported until he agrees, and we'll follow whatever terms he sets." }
+    ]
+  },
+  "permissions": [
+    { "id": "network.udp.bind", "why": "Runs the voice server: client mods send and receive audio over UDP." }
+  ],
+  "mapping": [
+    { "from": "Voice server (UDP)", "to": "wasi:sockets UDP (network.udp.bind)", "note": "Available in plugin API v0.1." },
+    { "from": "Plugin channel handshake", "to": "java-player.send-custom-payload + PlayerCustomPayloadEvent", "note": "Available: both directions, and PlayerChannelEvent fires on channel registration." },
+    { "from": "Player positions and worlds", "to": "player.get-position / get-world", "note": "Available: polled each tick for proximity." }
+  ],
+  "versions": []
+}

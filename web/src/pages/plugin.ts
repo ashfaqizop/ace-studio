@@ -1,7 +1,7 @@
 import type { Page, Ctx } from '../lib/router';
 import { pluginBySlug, waitingBySlug, latest, CATEGORIES, PLUGINS, WAITING, type Plugin } from '../data/plugins';
 import { char, sprite } from '../data/crew';
-import { pluginIcon, favButton, compareButton, compatBadge, permBadge, newBadge, emptyState, speaker, pluginCard, waitingBadge, waitingCard } from '../components/cards';
+import { pluginIcon, favButton, compareButton, compatBadge, permBadge, newBadge, emptyState, speaker, pluginCard, waitingBadge, waitingCard, waitKind } from '../components/cards';
 import { ago, bytes, codeBlock, date, esc, icon, md, num } from '../lib/html';
 import { assetUrl, GITHUB } from '../config';
 import { pushRecent, prefs, setPrefs, isNew } from '../lib/prefs';
@@ -218,29 +218,29 @@ function waitingPage(p: Plugin): string {
   const w = p.waiting;
   const porter = char(p.portedBy);
   const needs = w?.needs ?? [];
+  const k = waitKind(p);
   const more = WAITING.filter((x) => x.slug !== p.slug).slice(0, 3);
-  const pieces = needs.length === 1 ? 'one piece' : `${needs.length} pieces`;
   return `
   <div class="plugin-page waiting-page" style="view-transition-name: plugin-${esc(p.slug)}">
     <m3e-breadcrumb class="crumbs">
       <m3e-breadcrumb-item href="/plugins">${icon('extension', { slot: 'icon' })}Browse</m3e-breadcrumb-item>
-      <m3e-breadcrumb-item href="/plugins">Waiting on Pumpkin</m3e-breadcrumb-item>
+      <m3e-breadcrumb-item href="/plugins">Frozen ports</m3e-breadcrumb-item>
       <m3e-breadcrumb-item current="page">${esc(p.name)}</m3e-breadcrumb-item>
     </m3e-breadcrumb>
     <section class="p-hero">
       <div class="p-hero-icon">${pluginIcon(p, 112)}</div>
       <div class="p-hero-copy">
         <div class="p-badges">
-          ${waitingBadge()}
+          ${waitingBadge(p)}
           <span class="tag">${icon('gavel')}${esc(p.license)}</span>
         </div>
         <h1 class="display-md">${esc(p.name)}</h1>
         <p class="lead">${esc(p.summary)}</p>
-        <p class="muted p-meta">${icon('pause_circle')}Attempted ${w?.since ? `${date(w.since)} (${ago(w.since)})` : ''} · ${icon('extension_off')}${needs.length} missing API${needs.length === 1 ? '' : 's'}</p>
+        <p class="muted p-meta">${icon('pause_circle')}Attempted ${w?.since ? `${date(w.since)} (${ago(w.since)})` : ''} · ${icon(k.icon)}${k.count}</p>
       </div>
       <div class="p-actions">
         <m3e-callout variant="tertiary" class="waiting-callout">${icon('hourglass_top', { slot: 'icon', filled: true })}<span slot="label">Frozen, not forgotten</span>
-          We attempted this port, but Pumpkin&rsquo;s plugin API can&rsquo;t support it yet. It ships as soon as Pumpkin adds what&rsquo;s listed under <strong>What&rsquo;s missing</strong>.
+          ${k.callout}
         </m3e-callout>
         <div class="p-actions-row">
           ${favButton(p.slug, 'tonal')}
@@ -253,18 +253,18 @@ function waitingPage(p: Plugin): string {
     <div class="p-layout">
       <div class="p-main">
         <m3e-tabs class="p-tabs" stretch>
-          <m3e-tab for="t-missing" selected>${icon('extension_off', { slot: 'icon' })}What&rsquo;s missing</m3e-tab>
+          <m3e-tab for="t-missing" selected>${icon(k.icon, { slot: 'icon' })}${k.tab}</m3e-tab>
           <m3e-tab for="t-overview">${icon('description', { slot: 'icon' })}Overview</m3e-tab>
           <m3e-tab for="t-notes">${icon('swap_horiz', { slot: 'icon' })}Port notes</m3e-tab>
           <m3e-tab for="t-credits">${icon('handshake', { slot: 'icon' })}Credits</m3e-tab>
 
           <m3e-tab-panel id="t-missing">
             <div class="perms">
-              ${speaker(p.portedBy, `I mapped the whole plugin, but Pumpkin’s plugin API is missing ${pieces} it depends on. Here’s exactly what, and why.`)}
+              ${speaker(p.portedBy, k.speech)}
               <m3e-list class="perm-list">${needs.map((n) => `
-                <m3e-list-item>${icon('extension_off', { slot: 'leading' })}<code>${esc(n.api)}</code><span slot="supporting-text">${esc(n.why)}</span></m3e-list-item>`).join('')}
+                <m3e-list-item>${icon(k.icon, { slot: 'leading' })}<code>${esc(n.api)}</code><span slot="supporting-text">${esc(n.why)}</span></m3e-list-item>`).join('')}
               </m3e-list>
-              <p class="muted">We don&rsquo;t ship workarounds that only half-match the original. When a Pumpkin plugin API release adds these, the crew picks the port back up.</p>
+              <p class="muted">${k.footnote}</p>
             </div>
           </m3e-tab-panel>
           <m3e-tab-panel id="t-overview">
@@ -305,9 +305,9 @@ function waitingPage(p: Plugin): string {
           <div slot="content" class="aside-block">
             <h3 class="label">Status</h3>
             <dl class="kv">
-              <dt>${icon('hourglass_top')}State</dt><dd>Waiting on API</dd>
+              <dt>${icon('hourglass_top')}State</dt><dd>${k.state}</dd>
               ${w?.since ? `<dt>${icon('event')}Attempted</dt><dd>${date(w.since)}</dd>` : ''}
-              <dt>${icon('extension_off')}Missing</dt><dd>${needs.length} API${needs.length === 1 ? '' : 's'}</dd>
+              <dt>${icon(k.icon)}Blocked by</dt><dd>${k.count}</dd>
               <dt>${icon('gavel')}Licence</dt><dd>${esc(p.license)}</dd>
             </dl>
           </div>
@@ -324,7 +324,7 @@ function waitingPage(p: Plugin): string {
         </m3e-card>
       </aside>
     </div>
-    ${more.length ? `<section class="band"><div class="band-head"><h2 class="headline">Also waiting on Pumpkin</h2></div>
+    ${more.length ? `<section class="band"><div class="band-head"><h2 class="headline">Also frozen</h2></div>
       <div class="grid">${more.map((x) => waitingCard(x)).join('')}</div></section>` : ''}
   </div>`;
 }

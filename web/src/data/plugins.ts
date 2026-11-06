@@ -37,12 +37,13 @@ export interface Plugin {
   /**
    * `waiting-api`: attempted, but Pumpkin's plugin API can't support it yet. Listed on the site with what's missing,
    * never built. `versions` is empty until it ships.
+   * `waiting-permission`: the original isn't openly licensed, so it waits for its author's written permission.
    */
-  status?: 'waiting-api';
+  status?: 'waiting-api' | 'waiting-permission';
   waiting?: {
     /** When the port was attempted (YYYY-MM-DD). */
     since: string;
-    /** What the Pumpkin plugin API needs to add, and which feature depends on it. */
+    /** What has to happen first (missing Pumpkin APIs, or the author's permission), and why. */
     needs: { api: string; why: string }[];
     /** Where the request is tracked (Pumpkin issue / discussion), if any. */
     tracking?: string;
@@ -75,7 +76,7 @@ const manifests = import.meta.glob<PortManifest>('./ports/*.json', { eager: true
 const ALL: Plugin[] = Object.values(manifests).map((m) => ({ downloads: 0, followers: 0, ...m }));
 
 /** Ports frozen until the Pumpkin plugin API can support them (listed, never built). */
-export const WAITING: Plugin[] = ALL.filter((p) => p.status === 'waiting-api' || !p.versions.length).sort((a, b) =>
+export const WAITING: Plugin[] = ALL.filter((p) => !!p.status || !p.versions.length).sort((a, b) =>
   (b.waiting?.since ?? '').localeCompare(a.waiting?.since ?? ''),
 );
 

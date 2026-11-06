@@ -76,7 +76,7 @@ function waiting(s: State): string {
   <section class="band waiting-band" aria-labelledby="waiting-h">
     <div class="band-head"><div>
       <h2 class="headline" id="waiting-h">${waitingBadge()}</h2>
-      <p class="muted">We attempted these ports, but Pumpkin's plugin API can't support them yet. They're frozen, not forgotten: each page lists exactly what's missing, and we build them as soon as Pumpkin ships it.</p>
+      <p class="muted">We attempted these ports, but each is waiting on something outside our control: a Pumpkin plugin API that doesn't exist yet, or the original author's permission. They're frozen, not forgotten, and each page says exactly what's holding it up.</p>
     </div></div>
     <div class="grid">${hits.map((h) => waitingCard(h.p, h.nameHtml)).join('')}</div>
   </section>`;

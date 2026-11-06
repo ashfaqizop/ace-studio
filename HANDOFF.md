@@ -158,7 +158,7 @@ Ace VeinMiner first. `enchantment-manager.register-enchantment` exists in v0.1, 
 min/max cost, and plugins can't add enchantments to tags (in_enchanting_table/tradeable/on_random_loot/treasure).
 Upstream asks for no reuploads or forks on Modrinth/CurseForge; we publish only to GitHub, our site and the Pumpkin Market.
 
-## Ace SVC (Simple Voice Chat): ON HOLD for licence
+## Ace SVC (Simple Voice Chat): ON HOLD for licence, listed as `waiting-permission` (`plugins/ace-svc/ace.json`)
 
 Simple Voice Chat (henkelmax) is **All Rights Reserved** (licence file + Modrinth `LicenseRef-All-Rights-Reserved`).
 Don't translate or ship it without Max Henkel's written permission. The user is contacting him (SVC Discord

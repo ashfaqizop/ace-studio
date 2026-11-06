@@ -77,14 +77,44 @@ export function pluginCard(p: Plugin, nameHtml?: string): string {
   </m3e-card>`;
 }
 
-/** Status badge for ports frozen until the Pumpkin plugin API catches up. */
-export const waitingBadge = () =>
-  `<span class="tag tag-waiting" title="We attempted this port, but Pumpkin's plugin API can't support it yet">${icon('hourglass_top', { filled: true })}Waiting on Pumpkin Plugin API</span>`;
+/** Wording for a frozen port: blocked on the Pumpkin plugin API, or on the original author's permission. */
+export function waitKind(p: Plugin) {
+  const n = p.waiting?.needs.length ?? 0;
+  return p.status === 'waiting-permission'
+    ? {
+        badge: 'Waiting on author permission',
+        title: "The original isn't openly licensed, so we only port it with its author's written permission",
+        icon: 'front_hand',
+        state: 'Waiting on permission',
+        count: 'Needs permission',
+        tab: 'What we&rsquo;re waiting on',
+        callout: 'The original plugin isn&rsquo;t openly licensed, so we&rsquo;ve asked its author for permission to port it. Nothing ships until they agree.',
+        speech: 'The original is All Rights Reserved, so I haven’t ported any of it. We’ve asked the author, and this is what has to happen first.',
+        footnote: 'We only port closed-source or All Rights Reserved plugins with written permission. If the author says no, this listing comes down.',
+      }
+    : {
+        badge: 'Waiting on Pumpkin Plugin API',
+        title: "We attempted this port, but Pumpkin's plugin API can't support it yet",
+        icon: 'extension_off',
+        state: 'Waiting on API',
+        count: `${n} missing API${n === 1 ? '' : 's'}`,
+        tab: 'What&rsquo;s missing',
+        callout: 'We attempted this port, but Pumpkin&rsquo;s plugin API can&rsquo;t support it yet. It ships as soon as Pumpkin adds what&rsquo;s listed under <strong>What&rsquo;s missing</strong>.',
+        speech: `I mapped the whole plugin, but Pumpkin’s plugin API is missing ${n === 1 ? 'one piece' : `${n} pieces`} it depends on. Here’s exactly what, and why.`,
+        footnote: 'We don&rsquo;t ship workarounds that only half-match the original. When a Pumpkin plugin API release adds these, the crew picks the port back up.',
+      };
+}
+
+/** Status badge for a frozen port (see waitKind). Without a plugin it's the generic "frozen" heading tag. */
+export const waitingBadge = (p?: Plugin) => {
+  const k = p ? waitKind(p) : { badge: 'Frozen ports', title: 'Ports we attempted that are waiting on something outside our control' };
+  return `<span class="tag tag-waiting" title="${esc(k.title)}">${icon('hourglass_top', { filled: true })}${k.badge}</span>`;
+};
 
 /** Card for a waiting port: same shape as a plugin card, but no download, version or compare. */
 export function waitingCard(p: Plugin, nameHtml?: string): string {
   const porter = char(p.portedBy);
-  const needs = p.waiting?.needs.length ?? 0;
+  const k = waitKind(p);
   return `
   <m3e-card class="plugin-card waiting-card" variant="outlined" actionable href="/plugin/${esc(p.slug)}" data-reveal>
     <div slot="header" class="pc-head">
@@ -98,12 +128,12 @@ export function waitingCard(p: Plugin, nameHtml?: string): string {
     <div slot="content" class="pc-body">
       <p>${esc(p.summary)}</p>
       <div class="pc-cats">
-        ${waitingBadge()}
+        ${waitingBadge(p)}
         ${p.categories.map((c) => `<span class="tag">${icon(CATEGORIES[c]?.icon ?? 'label')}${esc(CATEGORIES[c]?.label ?? c)}</span>`).join('')}
       </div>
     </div>
     <div slot="footer" class="pc-foot">
-      <span title="Missing Pumpkin APIs">${icon('extension_off')}${needs} missing API${needs === 1 ? '' : 's'}</span>
+      <span title="${esc(k.state)}">${icon(k.icon)}${k.count}</span>
       ${p.waiting?.since ? `<span title="Attempted">${icon('pause_circle')}since ${ago(p.waiting.since)}</span>` : ''}
       <span class="pc-porter" title="Attempted by ${esc(porter.name)}">${sprite(p.portedBy, 0.5)}</span>
     </div>
