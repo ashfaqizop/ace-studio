@@ -1,0 +1,16 @@
+# Ace Studio workspace: plugins are built here, the website lives in web/
+# local reference/working folders (not committed)
+/characters/
+/pumpkin-docs/
+/spinners/
+
+# build & tooling
+node_modules/
+dist/
+.vercel/
+*.log
+.DS_Store
+Thumbs.db
+
+# generated previews
+web/scripts/out/
