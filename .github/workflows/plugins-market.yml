@@ -1,0 +1,27 @@
+# Run by hand: create or update a port's Pumpkin Market listing (name, description, category, commands, icon)
+# from plugins/<id>/ace.json. A new listing prints its id: put it in ace.json -> market.id, then tag the release.
+name: plugins-market
+
+on:
+  workflow_dispatch:
+    inputs:
+      plugin:
+        description: "Plugin id (folder under plugins/)"
+        required: true
+
+jobs:
+  listing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Create or update the listing
+        id: listing
+        env:
+          PUMPKIN_MARKET_TOKEN: ${{ secrets.PUMPKIN_MARKET_TOKEN }}
+          PLUGIN: ${{ inputs.plugin }}
+        run: python3 .github/scripts/market_listing.py "$PLUGIN"
+      - name: Summary
+        env:
+          PLUGIN: ${{ inputs.plugin }}
+          MARKET_ID: ${{ steps.listing.outputs.MARKET_ID }}
+        run: echo "Pumpkin Market listing for **$PLUGIN**: id \`$MARKET_ID\`" >> "$GITHUB_STEP_SUMMARY"

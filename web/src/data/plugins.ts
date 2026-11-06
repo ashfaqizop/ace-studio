@@ -33,7 +33,15 @@ export interface Plugin {
   mapping: { from: string; to: string; note?: string }[];
   versions: PluginVersion[];
   /** Pumpkin Market listing; release CI uploads each version there and ships the Market-signed binary. */
-  market?: { id: number; track?: 'stable' | 'beta' | 'alpha' };
+  market?: {
+    /** Set once the listing exists (plugins-market workflow prints it). */
+    id?: number;
+    track?: 'stable' | 'beta' | 'alpha';
+    /** Listing details, pushed by .github/scripts/market_listing.py */
+    category?: string;
+    keywords?: string;
+    commands?: { name: string; aliases?: string[]; permission?: string; description: string }[];
+  };
   /**
    * `waiting-api`: attempted, but Pumpkin's plugin API can't support it yet. Listed on the site with what's missing,
    * never built. `versions` is empty until it ships.

@@ -13,6 +13,15 @@
     "license": "LGPL-3.0-only"
   },
   "portedBy": "claude/forge",
+  "market": {
+    "track": "beta",
+    "category": "Chat",
+    "keywords": "voice, voice chat, proximity, plasmo, plasmo voice, mic, talk",
+    "commands": [
+      { "name": "vlist", "permission": "ace-plasmo:command.list", "description": "List players who have voice chat" },
+      { "name": "vrc", "aliases": ["vreconnect"], "permission": "ace-plasmo:command.reconnect", "description": "Reconnect to voice chat" }
+    ]
+  },
   "permissions": [
     { "id": "fs.write.data", "why": "Creates config.toml in its data folder the first time it starts." },
     { "id": "fs.read.data", "why": "Reads config.toml on start." },
