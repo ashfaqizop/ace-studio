@@ -1,0 +1,38 @@
+{
+  "slug": "ace-veinminer",
+  "name": "Ace VeinMiner",
+  "summary": "Mine a whole ore vein, tree or tunnel by breaking one block, with shapes, cooldowns and per-group rules.",
+  "description": "## One block, the whole vein\n\nAce VeinMiner is our planned port of **VeinMiner** by MiraculixxT. Break one block of a vein and every connected block of the same group breaks with it, as if you had mined each one yourself.\n\n- **Block groups** like ores with pickaxes and logs with axes, each with its own tools and overrides\n- **Shapes**: normal vein, flat, 1x1 / 2x2 / 3x3 tunnels and stairs up or down\n- **Rules**: sneak to vein-mine, cooldown, max chain size, search radius, correct tool only, hunger per block, merged drops\n- **Per-player toggle** and a `/veinminer` command for settings, groups and presets\n\n## Why it isn't out yet\n\nVein mining has to break every block *as the player*: vanilla loot from the player's tool (so Fortune and Silk Touch work), tool wear with Unbreaking, and the usual break events. Pumpkin's server can already do all of this internally, but the plugin API doesn't let plugins use it yet. We don't ship approximations, so this port waits until it does.",
+  "categories": ["qol", "utility", "world"],
+  "icon": { "shape": "gem", "symbol": "diamond" },
+  "license": "AGPL-3.0-only",
+  "original": {
+    "name": "VeinMiner",
+    "author": "MiraculixxT",
+    "url": "https://modrinth.com/datapack/veinminer",
+    "license": "AGPL-3.0-only"
+  },
+  "portedBy": "claude/scout",
+  "status": "waiting-api",
+  "waiting": {
+    "since": "2026-11-06",
+    "needs": [
+      { "api": "world.break-block(pos, player, flags)", "why": "Breaks each vein block as the player: fires BlockBreakEvent and drops vanilla loot using the held tool, so Fortune and Silk Touch apply. The server has World::break_block; the plugin API doesn't expose it, and set-block never drops loot." },
+      { "api": "item-stack / player: damage the held tool", "why": "Each extra block should wear the tool down, respecting Unbreaking, and stop when the tool breaks (decreaseDurability)." },
+      { "api": "block and item tag lookups", "why": "Groups are defined with tags such as #c:ores and #minecraft:pickaxes, and the correct-tool check depends on them." },
+      { "api": "world.drop-stack(pos, item-stack)", "why": "Needed for the mergeItemDrops option, which drops a whole vein's loot at the first block instead of block by block." }
+    ]
+  },
+  "permissions": [],
+  "mapping": [
+    { "from": "BlockBreakEvent", "to": "BlockBreakEvent", "note": "Available: start a vein when the player breaks the first block." },
+    { "from": "Player#isSneaking", "to": "player.is-sneaking", "note": "Available (mustSneak)." },
+    { "from": "Player#getFoodLevel / exhaustion", "to": "player.set-exhaustion", "note": "Available (hungerPerBlock)." },
+    { "from": "World#getBlockAt / BlockData", "to": "world.get-block-state", "note": "Available: vein traversal and shape strategies." },
+    { "from": "Block#breakNaturally(tool)", "to": "Missing", "note": "Needs world.break-block with the player as the cause." },
+    { "from": "ItemStack damage (Damageable)", "to": "Missing", "note": "Needs a tool-damage call that applies Unbreaking." },
+    { "from": "Tag.MINEABLE_PICKAXE, #c:ores", "to": "Missing", "note": "Needs tag lookups." },
+    { "from": "World#dropItemNaturally", "to": "Missing", "note": "Needs world.drop-stack." }
+  ],
+  "versions": []
+}

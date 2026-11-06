@@ -13,6 +13,11 @@ compiled to WebAssembly components for [Pumpkin](https://github.com/Pumpkin-MC/P
   (DiscordSRV is GPL-3.0, so Ace SRV is GPL-3.0).
 - **Reference sources live in `.cache/`** (gitignored): the upstream plugin and the Paper API, used to read
   behaviour, never copied wholesale.
+- **Blocked ports still get listed.** If the Pumpkin plugin API can't support a port, don't ship a workaround and
+  don't build it: create `plugins/<id>/ace.json` (plus the upstream LICENSE) with `"status": "waiting-api"`,
+  `"versions": []` and `"waiting": { "since", "needs": [{ "api", "why" }], "tracking"? }`, and no crate. The site lists it
+  as **Waiting on Pumpkin Plugin API**, with what's missing. When the API lands, add the crate and the first version, and
+  remove `status`/`waiting`.
 - **Site listing:** each port has an `ace.json` (the Ace Studio catalog entry). Running `npm run dev` or
   `npm run build` in `web/` copies it to `web/src/data/ports/`, which is committed because Vercel only sees `web/`.
   CI fails if the two differ or if the manifest version doesn't match `Cargo.toml`.

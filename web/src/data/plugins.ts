@@ -21,7 +21,8 @@ export interface Plugin {
   /** m3e-shape + Material Symbol used as the plugin's icon. */
   icon: { shape: string; symbol: string };
   license: string;
-  original: { name: string; author: string; url?: string; license: string };
+  /** `icon`: the original's Modrinth icon URL (shown in Credits). */
+  original: { name: string; author: string; url?: string; icon?: string; license: string };
   portedBy: CharRef;
   downloads: number;
   followers: number;
@@ -33,6 +34,19 @@ export interface Plugin {
   versions: PluginVersion[];
   /** Pumpkin Market listing; release CI uploads each version there and ships the Market-signed binary. */
   market?: { id: number; track?: 'stable' | 'beta' | 'alpha' };
+  /**
+   * `waiting-api`: attempted, but Pumpkin's plugin API can't support it yet. Listed on the site with what's missing,
+   * never built. `versions` is empty until it ships.
+   */
+  status?: 'waiting-api';
+  waiting?: {
+    /** When the port was attempted (YYYY-MM-DD). */
+    since: string;
+    /** What the Pumpkin plugin API needs to add, and which feature depends on it. */
+    needs: { api: string; why: string }[];
+    /** Where the request is tracked (Pumpkin issue / discussion), if any. */
+    tracking?: string;
+  };
 }
 
 export const CATEGORIES: Record<string, { label: string; icon: string }> = {
@@ -58,16 +72,23 @@ export type PortManifest = Omit<Plugin, 'downloads' | 'followers'> & { downloads
  */
 const manifests = import.meta.glob<PortManifest>('./ports/*.json', { eager: true, import: 'default' });
 
-const PORTS: Plugin[] = Object.values(manifests)
-  .map((m) => ({ downloads: 0, followers: 0, ...m }))
-  .sort((a, b) => b.versions[0].date.localeCompare(a.versions[0].date));
+const ALL: Plugin[] = Object.values(manifests).map((m) => ({ downloads: 0, followers: 0, ...m }));
 
+/** Ports frozen until the Pumpkin plugin API can support them (listed, never built). */
+export const WAITING: Plugin[] = ALL.filter((p) => p.status === 'waiting-api' || !p.versions.length).sort((a, b) =>
+  (b.waiting?.since ?? '').localeCompare(a.waiting?.since ?? ''),
+);
+
+const PORTS: Plugin[] = ALL.filter((p) => !WAITING.includes(p)).sort((a, b) => b.versions[0].date.localeCompare(a.versions[0].date));
+
+/** Released ports: every entry has at least one version. */
 export const PLUGINS: Plugin[] = [
   ...PORTS,
   ...demoPlugins, // dev-only demo entries (empty in production)
 ];
 
 export const pluginBySlug = (slug: string) => PLUGINS.find((p) => p.slug === slug);
+export const waitingBySlug = (slug: string) => WAITING.find((p) => p.slug === slug);
 export const latest = (p: Plugin) => p.versions[0];
 export const updatedAt = (p: Plugin) => latest(p).date;
 

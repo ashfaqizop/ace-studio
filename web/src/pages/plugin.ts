@@ -1,7 +1,7 @@
 import type { Page, Ctx } from '../lib/router';
-import { pluginBySlug, latest, CATEGORIES, PLUGINS, type Plugin } from '../data/plugins';
+import { pluginBySlug, waitingBySlug, latest, CATEGORIES, PLUGINS, WAITING, type Plugin } from '../data/plugins';
 import { char, sprite } from '../data/crew';
-import { pluginIcon, favButton, compareButton, compatBadge, permBadge, newBadge, emptyState, speaker, pluginCard } from '../components/cards';
+import { pluginIcon, favButton, compareButton, compatBadge, permBadge, newBadge, emptyState, speaker, pluginCard, waitingBadge, waitingCard } from '../components/cards';
 import { ago, bytes, codeBlock, date, esc, icon, md, num } from '../lib/html';
 import { assetUrl, GITHUB } from '../config';
 import { pushRecent, prefs, setPrefs, isNew } from '../lib/prefs';
@@ -9,17 +9,31 @@ import { compat, cmpVersion, PUMPKIN_VERSIONS } from '../lib/compat';
 import { reveal, applyDownloads } from '../lib/ui';
 import { brand } from '../lib/brands';
 import { logo } from '../components/shell';
+import { hydrateModrinthIcons, modrinthSlug } from '../lib/modrinth';
 
 const PERM_ICON: Record<string, string> = {
-  'fs:read:data': 'folder_open',
-  'fs:write:data': 'save',
-  'network:outbound': 'public',
+  'fs.read.data': 'folder_open',
+  'fs.write.data': 'save',
+  'http.outbound': 'cloud_upload',
+  'network.dns': 'dns',
+  'network.tcp.connect': 'lan',
+  'network.outbound': 'public',
+  'sys.env': 'terminal',
 };
 
+/** The original plugin’s icon: manifest override, else fetched from Modrinth (see lib/modrinth.ts), else a glyph. */
+function originalIcon(p: Plugin): string {
+  if (p.original.icon) {
+    return `<img class="credit-img" src="${esc(p.original.icon)}" alt="${esc(p.original.name)} icon" width="56" height="56" loading="lazy" referrerpolicy="no-referrer" />`;
+  }
+  const slug = modrinthSlug(p.original.url);
+  const glyph = icon('person', { cls: 'credit-i' });
+  return slug ? `<span class="credit-art" data-modrinth-icon="${esc(slug)}" data-alt="${esc(p.original.name)} icon">${glyph}</span>` : glyph;
+}
+
 function tomlFor(p: Plugin): string {
-  const id = p.slug.replace(/-/g, '_');
   const perms = p.permissions.map((x) => `"${x.id}"`).join(', ');
-  return `[plugins.overrides.${id}]
+  return `[plugins.overrides."${p.slug}"]
 enabled = true
 allowed_permissions = [${perms}]${p.permissions.length ? '' : ' # needs no extra capabilities'}
 `;
@@ -132,7 +146,7 @@ function tabs(p: Plugin): string {
       <div class="credits">
         <m3e-card variant="outlined">
           <div slot="content" class="credit">
-            ${icon('person', { cls: 'credit-i' })}
+            ${originalIcon(p)}
             <div><span class="label">Original plugin</span><h3>${esc(p.original.name)}</h3>
             <p class="muted">by ${esc(p.original.author)} · ${esc(p.original.license)}</p>
             ${p.original.url ? `<m3e-button variant="tonal" href="${esc(p.original.url)}" target="_blank" rel="noopener">${brand('modrinth', { slot: 'icon', size: 18, tint: true })}View on Modrinth</m3e-button>` : ''}</div>
@@ -199,10 +213,128 @@ function aside(p: Plugin): string {
   </aside>`;
 }
 
+/** Page for a port frozen until the Pumpkin plugin API can support it: what's missing, no downloads. */
+function waitingPage(p: Plugin): string {
+  const w = p.waiting;
+  const porter = char(p.portedBy);
+  const needs = w?.needs ?? [];
+  const more = WAITING.filter((x) => x.slug !== p.slug).slice(0, 3);
+  const pieces = needs.length === 1 ? 'one piece' : `${needs.length} pieces`;
+  return `
+  <div class="plugin-page waiting-page" style="view-transition-name: plugin-${esc(p.slug)}">
+    <m3e-breadcrumb class="crumbs">
+      <m3e-breadcrumb-item href="/plugins">${icon('extension', { slot: 'icon' })}Browse</m3e-breadcrumb-item>
+      <m3e-breadcrumb-item href="/plugins">Waiting on Pumpkin</m3e-breadcrumb-item>
+      <m3e-breadcrumb-item current="page">${esc(p.name)}</m3e-breadcrumb-item>
+    </m3e-breadcrumb>
+    <section class="p-hero">
+      <div class="p-hero-icon">${pluginIcon(p, 112)}</div>
+      <div class="p-hero-copy">
+        <div class="p-badges">
+          ${waitingBadge()}
+          <span class="tag">${icon('gavel')}${esc(p.license)}</span>
+        </div>
+        <h1 class="display-md">${esc(p.name)}</h1>
+        <p class="lead">${esc(p.summary)}</p>
+        <p class="muted p-meta">${icon('pause_circle')}Attempted ${w?.since ? `${date(w.since)} (${ago(w.since)})` : ''} · ${icon('extension_off')}${needs.length} missing API${needs.length === 1 ? '' : 's'}</p>
+      </div>
+      <div class="p-actions">
+        <m3e-callout variant="tertiary" class="waiting-callout">${icon('hourglass_top', { slot: 'icon', filled: true })}<span slot="label">Frozen, not forgotten</span>
+          We attempted this port, but Pumpkin&rsquo;s plugin API can&rsquo;t support it yet. It ships as soon as Pumpkin adds what&rsquo;s listed under <strong>What&rsquo;s missing</strong>.
+        </m3e-callout>
+        <div class="p-actions-row">
+          ${favButton(p.slug, 'tonal')}
+          <m3e-icon-button variant="tonal" data-share="/plugin/${esc(p.slug)}" id="share-btn" aria-label="Share">${icon('share')}</m3e-icon-button>
+          <m3e-tooltip for="share-btn">Share</m3e-tooltip>
+          ${w?.tracking ? `<m3e-button variant="outlined" href="${esc(w.tracking)}" target="_blank" rel="noopener">${brand('github', { slot: 'icon', size: 18 })}Follow the request</m3e-button>` : ''}
+        </div>
+      </div>
+    </section>
+    <div class="p-layout">
+      <div class="p-main">
+        <m3e-tabs class="p-tabs" stretch>
+          <m3e-tab for="t-missing" selected>${icon('extension_off', { slot: 'icon' })}What&rsquo;s missing</m3e-tab>
+          <m3e-tab for="t-overview">${icon('description', { slot: 'icon' })}Overview</m3e-tab>
+          <m3e-tab for="t-notes">${icon('swap_horiz', { slot: 'icon' })}Port notes</m3e-tab>
+          <m3e-tab for="t-credits">${icon('handshake', { slot: 'icon' })}Credits</m3e-tab>
+
+          <m3e-tab-panel id="t-missing">
+            <div class="perms">
+              ${speaker(p.portedBy, `I mapped the whole plugin, but Pumpkin’s plugin API is missing ${pieces} it depends on. Here’s exactly what, and why.`)}
+              <m3e-list class="perm-list">${needs.map((n) => `
+                <m3e-list-item>${icon('extension_off', { slot: 'leading' })}<code>${esc(n.api)}</code><span slot="supporting-text">${esc(n.why)}</span></m3e-list-item>`).join('')}
+              </m3e-list>
+              <p class="muted">We don&rsquo;t ship workarounds that only half-match the original. When a Pumpkin plugin API release adds these, the crew picks the port back up.</p>
+            </div>
+          </m3e-tab-panel>
+          <m3e-tab-panel id="t-overview">
+            <div class="overview">
+              <article id="readme" class="prose">${md(p.description)}</article>
+              <m3e-toc for="readme" max-depth="3" class="toc"><span slot="overline">On this page</span></m3e-toc>
+            </div>
+          </m3e-tab-panel>
+          <m3e-tab-panel id="t-notes">
+            <p class="muted">How the original plugin&rsquo;s APIs map to Pumpkin, including the parts that don&rsquo;t exist yet.</p>
+            <div class="table-wrap"><table class="map">
+              <thead><tr><th>Original</th><th></th><th>Pumpkin</th><th>Notes</th></tr></thead>
+              <tbody>${p.mapping.map((m) => `<tr><td><code>${esc(m.from)}</code></td><td>${icon('arrow_forward')}</td><td><code>${esc(m.to)}</code></td><td class="muted">${esc(m.note ?? '')}</td></tr>`).join('')}</tbody>
+            </table></div>
+          </m3e-tab-panel>
+          <m3e-tab-panel id="t-credits">
+            <div class="credits">
+              <m3e-card variant="outlined">
+                <div slot="content" class="credit">
+                  ${originalIcon(p)}
+                  <div><span class="label">Original plugin</span><h3>${esc(p.original.name)}</h3>
+                  <p class="muted">by ${esc(p.original.author)} · ${esc(p.original.license)}</p>
+                  ${p.original.url ? `<m3e-button variant="tonal" href="${esc(p.original.url)}" target="_blank" rel="noopener">${brand('modrinth', { slot: 'icon', size: 18, tint: true })}View on Modrinth</m3e-button>` : ''}</div>
+                </div>
+              </m3e-card>
+              <m3e-card variant="outlined">
+                <div slot="content" class="credit">
+                  ${sprite(p.portedBy, 1)}
+                  <div><span class="label">Attempted by</span><h3>${esc(porter.name)}</h3><p class="muted">${esc(porter.role)} at Ace Studio</p></div>
+                </div>
+              </m3e-card>
+            </div>
+          </m3e-tab-panel>
+        </m3e-tabs>
+      </div>
+      <aside class="p-aside">
+        <m3e-card variant="filled">
+          <div slot="content" class="aside-block">
+            <h3 class="label">Status</h3>
+            <dl class="kv">
+              <dt>${icon('hourglass_top')}State</dt><dd>Waiting on API</dd>
+              ${w?.since ? `<dt>${icon('event')}Attempted</dt><dd>${date(w.since)}</dd>` : ''}
+              <dt>${icon('extension_off')}Missing</dt><dd>${needs.length} API${needs.length === 1 ? '' : 's'}</dd>
+              <dt>${icon('gavel')}Licence</dt><dd>${esc(p.license)}</dd>
+            </dl>
+          </div>
+        </m3e-card>
+        <m3e-card variant="filled">
+          <div slot="content" class="aside-block">
+            <h3 class="label">Links</h3>
+            <div class="links">
+              ${p.original.url ? `<a href="${esc(p.original.url)}" target="_blank" rel="noopener">${brand('modrinth', { size: 18, tint: true })}Original on Modrinth</a>` : ''}
+              ${w?.tracking ? `<a href="${esc(w.tracking)}" target="_blank" rel="noopener">${brand('github', { size: 18 })}API request</a>` : ''}
+              <a href="/roadmap">${icon('view_kanban')}Roadmap</a>
+            </div>
+          </div>
+        </m3e-card>
+      </aside>
+    </div>
+    ${more.length ? `<section class="band"><div class="band-head"><h2 class="headline">Also waiting on Pumpkin</h2></div>
+      <div class="grid">${more.map((x) => waitingCard(x)).join('')}</div></section>` : ''}
+  </div>`;
+}
+
 const plugin: Page = {
-  title: (c: Ctx) => pluginBySlug(c.params.slug)?.name ?? 'Plugin not found',
+  title: (c: Ctx) => (pluginBySlug(c.params.slug) ?? waitingBySlug(c.params.slug))?.name ?? 'Plugin not found',
   render(c) {
     const p = pluginBySlug(c.params.slug);
+    const waitingPort = p ? undefined : waitingBySlug(c.params.slug);
+    if (waitingPort) return waitingPage(waitingPort);
     if (!p) {
       return emptyState('claude/patch', 'That port doesn’t exist', `We couldn’t find “${esc(c.params.slug)}”. It may have been renamed.`,
         `<m3e-button variant="filled" href="/plugins">${icon('extension', { slot: 'icon' })}Browse ports</m3e-button>`);
@@ -221,7 +353,8 @@ const plugin: Page = {
   },
   mount(root, c) {
     const p = pluginBySlug(c.params.slug);
-    if (!p) return;
+    void hydrateModrinthIcons(root);
+    if (!p) return waitingBySlug(c.params.slug) ? reveal(root) : undefined;
     pushRecent(p.slug);
     applyDownloads(root);
     root.querySelector('#p-server')?.addEventListener('change', (e) => {

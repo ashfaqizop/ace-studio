@@ -23,11 +23,19 @@ jobs:
           status=0
           for manifest in plugins/*/ace.json; do
             id=$(basename "$(dirname "$manifest")")
-            jq -e --arg id "$id" '.slug == $id and (.versions | length > 0)' "$manifest" > /dev/null \
-              || { echo "::error file=$manifest::slug must be \"$id\" and versions must not be empty"; status=1; }
-            version=$(grep -m1 '^version' "plugins/$id/Cargo.toml" | cut -d'"' -f2)
-            jq -e --arg v "$version" '.versions[0].version == $v' "$manifest" > /dev/null \
-              || { echo "::error file=$manifest::versions[0].version must match Cargo.toml ($version)"; status=1; }
+            jq -e --arg id "$id" '.slug == $id' "$manifest" > /dev/null \
+              || { echo "::error file=$manifest::slug must be \"$id\""; status=1; }
+            if jq -e '.status == "waiting-api"' "$manifest" > /dev/null; then
+              # listed on the site only, never built: needs a reason and what's missing
+              jq -e '(.waiting.since | length > 0) and (.waiting.needs | length > 0) and (.versions | length == 0)' "$manifest" > /dev/null \
+                || { echo "::error file=$manifest::waiting-api ports need waiting.since, waiting.needs and no versions"; status=1; }
+            else
+              jq -e '.versions | length > 0' "$manifest" > /dev/null \
+                || { echo "::error file=$manifest::versions must not be empty (or set status: waiting-api)"; status=1; }
+              version=$(grep -m1 '^version' "plugins/$id/Cargo.toml" | cut -d'"' -f2)
+              jq -e --arg v "$version" '.versions[0].version == $v' "$manifest" > /dev/null \
+                || { echo "::error file=$manifest::versions[0].version must match Cargo.toml ($version)"; status=1; }
+            fi
             if ! cmp -s "$manifest" "web/src/data/ports/$id.json"; then
               echo "::error file=$manifest::web/src/data/ports/$id.json is out of date; run npm run dev or npm run build in web/ and commit it"
               status=1

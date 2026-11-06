@@ -1,5 +1,5 @@
 import { NAV } from './shell';
-import { PLUGINS } from '../data/plugins';
+import { PLUGINS, WAITING } from '../data/plugins';
 import { CREW, SETS, sprite } from '../data/crew';
 import { esc, icon } from '../lib/html';
 import { fuzzy, highlight } from '../lib/fuzzy';
@@ -51,6 +51,7 @@ function items(): Item[] {
     { group: 'Pages', label: 'Saved plugins', sub: '/plugins?saved=1', art: icon('favorite'), run: go('/plugins?saved=1') },
     { group: 'Pages', label: 'Compare ports', sub: '/compare', art: icon('compare_arrows'), run: go('/compare') },
     ...PLUGINS.map((p): Item => ({ group: 'Ports', label: p.name, sub: p.summary, art: pluginIcon(p, 28), keywords: `${p.original.name} ${p.categories.join(' ')}`, run: go(`/plugin/${p.slug}`) })),
+    ...WAITING.map((p): Item => ({ group: 'Ports', label: p.name, sub: 'Waiting on Pumpkin Plugin API', art: pluginIcon(p, 28), keywords: `${p.original.name} ${p.categories.join(' ')} waiting blocked`, run: go(`/plugin/${p.slug}`) })),
     ...CREW.map((c): Item => ({ group: 'Crew', label: c.name, sub: `${c.role} · ${SETS[c.set].label}`, art: sprite(`${c.set}/${c.id}`, 0.5), keywords: c.role, run: go(`/crew#crew-${c.set}-${c.id}`) })),
   ];
 }

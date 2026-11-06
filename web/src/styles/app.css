@@ -724,3 +724,13 @@ mark.hl { background: color-mix(in oklab, var(--c-primary) 26%, transparent); co
 .top-req .title { display: flex; align-items: center; gap: 6px; margin-top: 0; }
 .tr-votes { display: inline-flex; align-items: center; gap: 4px; min-width: 48px; font-weight: 700; color: var(--c-primary); }
 .tr-votes m3e-icon { --m3e-icon-size: 16px; }
+
+/* ---------- Original plugin icon (Modrinth) & waiting ports ---------- */
+.credit-art { display: grid; place-items: center; width: 56px; height: 56px; flex: none; }
+.credit-img { width: 56px; height: 56px; flex: none; border-radius: 16px; object-fit: cover; background: var(--md-sys-color-surface-container-highest); box-shadow: 0 4px 14px -6px rgb(0 0 0 / 0.45); }
+.tag-waiting { background: var(--md-sys-color-tertiary-container); color: var(--md-sys-color-on-tertiary-container); }
+.waiting-card { border-style: dashed; }
+.waiting-card .plugin-icon { filter: saturate(0.55); }
+.waiting-band .headline .tag-waiting { font-size: 0.95rem; padding: 4px 14px; }
+.waiting-band .headline .tag-waiting m3e-icon { --m3e-icon-size: 20px; }
+.waiting-callout { max-width: 360px; }

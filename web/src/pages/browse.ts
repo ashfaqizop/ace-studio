@@ -1,7 +1,7 @@
 import type { Page } from '../lib/router';
 import { setQuery } from '../lib/router';
-import { PLUGINS, CATEGORIES, updatedAt, type Plugin } from '../data/plugins';
-import { pluginCard, pluginRow, emptyState } from '../components/cards';
+import { PLUGINS, WAITING, CATEGORIES, updatedAt, type Plugin } from '../data/plugins';
+import { pluginCard, pluginRow, emptyState, waitingCard, waitingBadge } from '../components/cards';
 import { esc, icon } from '../lib/html';
 import { prefs, setPrefs, onPrefs } from '../lib/prefs';
 import { reveal, applyDownloads, downloadsFor } from '../lib/ui';
@@ -64,8 +64,27 @@ function filter(s: State): Hit[] {
   return hits.sort(by[sort]);
 }
 
+/** Ports frozen until the Pumpkin plugin API can support them; same text/category/saved filters. */
+function waiting(s: State): string {
+  if (s.safe || s.works) return '';
+  const favs = prefs().favorites;
+  const hits = WAITING.filter((p) => (!s.saved || favs.includes(p.slug)) && (!s.cats.length || s.cats.some((c) => p.categories.includes(c))))
+    .map((p) => score(p, s.q))
+    .filter((h): h is Hit => !!h);
+  if (!hits.length) return '';
+  return `
+  <section class="band waiting-band" aria-labelledby="waiting-h">
+    <div class="band-head"><div>
+      <h2 class="headline" id="waiting-h">${waitingBadge()}</h2>
+      <p class="muted">We attempted these ports, but Pumpkin's plugin API can't support them yet. They're frozen, not forgotten: each page lists exactly what's missing, and we build them as soon as Pumpkin ships it.</p>
+    </div></div>
+    <div class="grid">${hits.map((h) => waitingCard(h.p, h.nameHtml)).join('')}</div>
+  </section>`;
+}
+
 function results(s: State): string {
   const list = filter(s);
+  if (!list.length && waiting(s)) return waiting(s);
   if (!list.length) {
     return s.saved && !s.q && !s.cats.length
       ? emptyState('ambient/sprout', 'Nothing saved yet', 'Tap the ♥ on any port to keep it here for later.', `<m3e-button variant="tonal" href="/plugins">${icon('extension', { slot: 'icon' })}Browse ports</m3e-button>`)
@@ -73,9 +92,9 @@ function results(s: State): string {
           `<m3e-button variant="tonal" id="clear-filters">${icon('filter_alt_off', { slot: 'icon' })}Clear filters</m3e-button>
            <m3e-button variant="text" href="/request">Request it as a port</m3e-button>`);
   }
-  return s.view === 'grid'
+  return (s.view === 'grid'
     ? `<div class="grid">${list.map((h) => pluginCard(h.p, h.nameHtml)).join('')}</div>`
-    : `<div class="rows">${list.map((h) => pluginRow(h.p, h.nameHtml)).join('')}</div>`;
+    : `<div class="rows">${list.map((h) => pluginRow(h.p, h.nameHtml)).join('')}</div>`) + waiting(s);
 }
 
 const SPECIAL = [
@@ -87,7 +106,7 @@ const SPECIAL = [
 const browse: Page = {
   title: (c) => (c.query.get('saved') ? 'Saved plugins' : 'Browse ports'),
   render(c) {
-    if (!PLUGINS.length) {
+    if (!PLUGINS.length && !WAITING.length) {
       return `<section class="page-head"><span class="eyebrow">${icon('extension')} Catalog</span><h1 class="display-md">Browse <em>ports</em></h1></section>
       ${emptyState('claude/forge', 'No ports have shipped yet', 'The crew is forging the first ones right now. Request the plugin you want most and it jumps the queue.',
         `<m3e-button variant="filled" href="/request">${icon('add_circle', { slot: 'icon' })}Request a port</m3e-button>
@@ -143,7 +162,7 @@ const browse: Page = {
     <section id="results" class="results">${results(s)}</section>`;
   },
   mount(root, c) {
-    if (!PLUGINS.length) return;
+    if (!PLUGINS.length && !WAITING.length) return;
     const s = readState(c.query);
     const out = root.querySelector<HTMLElement>('#results')!;
     let stopReveal = reveal(out);

@@ -77,6 +77,39 @@ export function pluginCard(p: Plugin, nameHtml?: string): string {
   </m3e-card>`;
 }
 
+/** Status badge for ports frozen until the Pumpkin plugin API catches up. */
+export const waitingBadge = () =>
+  `<span class="tag tag-waiting" title="We attempted this port, but Pumpkin's plugin API can't support it yet">${icon('hourglass_top', { filled: true })}Waiting on Pumpkin Plugin API</span>`;
+
+/** Card for a waiting port: same shape as a plugin card, but no download, version or compare. */
+export function waitingCard(p: Plugin, nameHtml?: string): string {
+  const porter = char(p.portedBy);
+  const needs = p.waiting?.needs.length ?? 0;
+  return `
+  <m3e-card class="plugin-card waiting-card" variant="outlined" actionable href="/plugin/${esc(p.slug)}" data-reveal>
+    <div slot="header" class="pc-head">
+      ${pluginIcon(p)}
+      <div class="pc-title">
+        <h3>${nameHtml ?? esc(p.name)}</h3>
+        <span class="muted">port of ${esc(p.original.name)}</span>
+      </div>
+      <div class="pc-btns">${favButton(p.slug)}</div>
+    </div>
+    <div slot="content" class="pc-body">
+      <p>${esc(p.summary)}</p>
+      <div class="pc-cats">
+        ${waitingBadge()}
+        ${p.categories.map((c) => `<span class="tag">${icon(CATEGORIES[c]?.icon ?? 'label')}${esc(CATEGORIES[c]?.label ?? c)}</span>`).join('')}
+      </div>
+    </div>
+    <div slot="footer" class="pc-foot">
+      <span title="Missing Pumpkin APIs">${icon('extension_off')}${needs} missing API${needs === 1 ? '' : 's'}</span>
+      ${p.waiting?.since ? `<span title="Attempted">${icon('pause_circle')}since ${ago(p.waiting.since)}</span>` : ''}
+      <span class="pc-porter" title="Attempted by ${esc(porter.name)}">${sprite(p.portedBy, 0.5)}</span>
+    </div>
+  </m3e-card>`;
+}
+
 export function pluginRow(p: Plugin, nameHtml?: string): string {
   const v = latest(p);
   return `
