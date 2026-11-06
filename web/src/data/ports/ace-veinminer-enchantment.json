@@ -1,0 +1,35 @@
+{
+  "slug": "ace-veinminer-enchantment",
+  "name": "Ace VeinMiner Enchantment",
+  "summary": "Add-on for Ace VeinMiner: vein mining only works on tools with the new Veinmine enchantment.",
+  "description": "## Earn your vein miner\n\nAce VeinMiner Enchantment is our planned port of **VeinMiner Enchantment** by MiraculixxT, the add-on that locks vein mining behind a custom **Veinmine** enchantment. Install it next to Ace VeinMiner and only tools carrying the enchantment can vein-mine, still following every block group, rule and setting.\n\n- **Veinmine enchantment** on pickaxes and other mining tools, from the enchanting table, villager trades and loot\n- **Configurable**: max level, weight, enchanting costs, anvil cost, supported items, treasure, tradeable and lootable\n- **Level gates**: VeinMiner's `minEnchantLevel` can require a higher level, for example ores only at level 2+\n\n## Why it isn't out yet\n\nThis is an add-on to [Ace VeinMiner](/plugin/ace-veinminer), which is itself waiting on the Pumpkin plugin API, so it can't ship first. Pumpkin can already register custom enchantments, but plugins can't yet set the enchanting-table costs or choose whether the enchantment shows up in the table, trades and loot.",
+  "categories": ["qol", "utility"],
+  "icon": { "shape": "9-sided-cookie", "symbol": "auto_fix_high" },
+  "license": "LGPL-3.0-only",
+  "original": {
+    "name": "VeinMiner Enchantment",
+    "author": "MiraculixxT",
+    "url": "https://modrinth.com/datapack/veinminer-enchantment",
+    "license": "LGPL-3.0-only"
+  },
+  "portedBy": "claude/scout",
+  "status": "waiting-api",
+  "waiting": {
+    "since": "2026-11-06",
+    "needs": [
+      { "api": "Ace VeinMiner (waiting on Pumpkin)", "why": "This is an add-on: it only gates VeinMiner's vein mining behind the enchantment. It ships once Ace VeinMiner can (world.break-block as the player, tool damage, tag lookups, world.drop-stack)." },
+      { "api": "custom-enchantment: min-cost / max-cost", "why": "The enchanting-table level range (minCost 15, maxCost 65, plus per-level steps) has no field in custom-enchantment, so the table can't offer it at the right levels." },
+      { "api": "enchantment tag membership", "why": "The inEnchantingTable, tradeable, lootable and treasure settings work by adding the enchantment to #minecraft:in_enchanting_table, #tradeable, #on_random_loot and #treasure. Plugins can't add a custom enchantment to tags yet." }
+    ]
+  },
+  "permissions": [],
+  "mapping": [
+    { "from": "enchantment/veinminer.json", "to": "enchantment-manager.register-enchantment", "note": "Available: id, name, max level, weight, anvil cost, supported items and slots." },
+    { "from": "ItemStack enchantment level", "to": "item-stack.get-custom-enchantment-level", "note": "Available: check the held tool's Veinmine level against minEnchantLevel." },
+    { "from": "/veinminer enchant <setting>", "to": "command (under Ace VeinMiner)", "note": "Available: settings saved to the data folder, applied on restart like upstream." },
+    { "from": "min_cost / max_cost", "to": "Missing", "note": "Needs enchanting cost fields on custom-enchantment." },
+    { "from": "#in_enchanting_table, #tradeable, #on_random_loot, #treasure", "to": "Missing", "note": "Needs a way to add custom enchantments to enchantment tags." },
+    { "from": "Veinminer core", "to": "Missing", "note": "Needs Ace VeinMiner, which is waiting on the Pumpkin API." }
+  ],
+  "versions": []
+}

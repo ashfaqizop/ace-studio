@@ -35,6 +35,7 @@ plugins/
   Cargo.toml            workspace (all ports share one lockfile and release profile)
   .cargo/config.toml    builds for wasm32-wasip2
   ace-srv/              Ace SRV (DiscordSRV)
+  ace-veinminer*/       waiting on the Pumpkin API (ace.json + LICENSE only)
   .cache/               upstream sources for reference (ignored)
 ```
 

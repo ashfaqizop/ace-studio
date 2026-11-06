@@ -150,6 +150,23 @@ held tool → Fortune/Silk Touch, break effects — `crates/pumpkin-core/src/wor
 tool damage respecting Unbreaking, block/item tag lookups. Rust SDK only targets v0.1 (frozen), so this needs a new API
 version with SDK support. Resume when Pumpkin ships it; the request is in the Discord ideas post.
 
+## Ace VeinMiner Enchantment: waiting-api, add-on to Ace VeinMiner
+
+`plugins/ace-veinminer-enchantment/ace.json`, LGPL-3.0-only (Modrinth). Upstream is in the same repo:
+`veinminer-enchant/` and `datapacks/enchantment/` (enchantment JSON + tags `non_treasure`/`tradeable`). It's blocked by
+Ace VeinMiner first. `enchantment-manager.register-enchantment` exists in v0.1, but `custom-enchantment` has no
+min/max cost, and plugins can't add enchantments to tags (in_enchanting_table/tradeable/on_random_loot/treasure).
+Upstream asks for no reuploads or forks on Modrinth/CurseForge; we publish only to GitHub, our site and the Pumpkin Market.
+
+## Ace SVC (Simple Voice Chat): ON HOLD for licence
+
+Simple Voice Chat (henkelmax) is **All Rights Reserved** (licence file + Modrinth `LicenseRef-All-Rights-Reserved`).
+Don't translate or ship it without Max Henkel's written permission. The user is contacting him (SVC Discord
+<https://discord.gg/4dH2zwTmyX>, X @henkelmax; no public email). Upstream is cloned to `plugins/.cache/svc`, but none of
+its code has been read. Feasibility in v0.1 looks good: `network.udp.bind`, `java_player.send_custom_payload`,
+`PlayerCustomPayloadEvent` and `PlayerChannelEvent` (both fire). WIT v0.1 files are in `plugins/.cache/wit/`. The
+legal alternative is Plasmo Voice (LGPL-3.0-only).
+
 ## Open items
 
 - Rotate `PUMPKIN_MARKET_TOKEN` (exposed in chat). Do it in the browser console, pipe straight to `gh secret set`.
