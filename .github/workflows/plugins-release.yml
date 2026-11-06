@@ -1,0 +1,43 @@
+# Tag <id>-v<version> (e.g. ace-srv-v0.1.0) to publish that port's .wasm as a GitHub release.
+# The Ace Studio site downloads from releases/download/<id>-v<version>/<id>-<version>.wasm.
+name: plugins-release
+
+on:
+  push:
+    tags: ["*-v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    uses: ./.github/workflows/plugins-build.yml
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: plugins
+          path: dist
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          id="${TAG%-v*}"
+          version="${TAG##*-v}"
+          file="dist/${id}-${version}.wasm"
+          if [ ! -f "$file" ]; then
+            echo "::error::$file was not built. Does plugins/${id}/Cargo.toml say version = \"${version}\"?"
+            ls dist
+            exit 1
+          fi
+          notes="plugins/${id}/CHANGELOG.md"
+          if [ -f "$notes" ]; then
+            gh release create "$TAG" "$file" --title "$TAG" --notes-file "$notes"
+          else
+            gh release create "$TAG" "$file" --title "$TAG" --generate-notes
+          fi

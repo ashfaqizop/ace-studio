@@ -1,0 +1,91 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  Ace SRV messages · plugins/data/ace-srv/messages.toml
+#  In-game text accepts MiniMessage-style tags (<aqua>, <#ff8800>, <bold>, </aqua>, <reset>)
+#  and legacy & codes (&a, &l, &r, &#ff8800). Discord text uses Discord markdown.
+# ─────────────────────────────────────────────────────────────────────────────
+
+[discord_to_minecraft]
+format = "[<aqua>Discord</aqua> | %toprolecolor%%toprolealias%<reset>] %name%%reply% » %message%"
+format_no_role = "[<aqua>Discord</aqua>] %name%%reply% » %message%"
+reply_format = " <gray>(replying to %name%)</gray>"
+all_roles_separator = " | "
+
+[minecraft_to_discord]
+format = "**%displayname%** » %message%"
+webhook_username = "%displayname%"
+webhook_content = "%message%"
+
+[server]
+startup = ":white_check_mark: **Server has started**"
+shutdown = ":octagonal_sign: **Server has stopped**"
+
+[player_list]
+header = "**Online players (%playercount%/%playermax%):**"
+empty = "**No online players**"
+player = "%displayname%"
+separator = ", "
+
+[topic]
+chat = "%playercount%/%playermax% players online | %totalplayers% unique players ever joined | Online for %uptimemins% minutes | Updated %time% UTC"
+console = "TPS: %tps% | MSPT: %mspt% | %playercount%/%playermax% online | Updated %time% UTC"
+chat_shutdown = "Server is offline | %totalplayers% unique players ever joined"
+console_shutdown = "Server is offline"
+
+[console]
+prefix = "[%time% %level%] "
+
+[linking]
+code = "<gray>Send a DM to <aqua>%botname%</aqua> on Discord containing just <aqua><bold>%code%</bold></aqua> to link your account. It expires in %minutes% minutes.</gray>"
+already_linked = "<gray>Your account is already linked to <aqua>%discordname%</aqua>. Use <aqua>/discord unlink</aqua> first.</gray>"
+not_linked = "<gray>Your account is not linked. Use <aqua>/discord link</aqua>.</gray>"
+linked_info = "<gray>Linked to <aqua>%discordname%</aqua> (%discordid%).</gray>"
+unlinked = "<gray>Your Discord account has been unlinked.</gray>"
+linked_game = "<green>Your account is now linked to <aqua>%discordname%</aqua> on Discord.</green>"
+linked_discord = "Your Discord account has been linked to **%name%** (`%uuid%`)."
+already_linked_discord = "This Discord account is already linked to **%name%**."
+invalid_code = "That code is invalid or has expired. Run `/discord link` in game to get a new one."
+dm_help = "Hi! Run `/discord link` in Minecraft and send me the 4-digit code you get to link your account."
+not_connected = "<red>Not connected to Discord yet. Try again in a moment.</red>"
+
+[commands]
+invite = "<aqua>Join our Discord:</aqua> <underlined>%invite%</underlined>"
+reloaded = "<green>Ace SRV configuration reloaded.</green>"
+broadcast_sent = "<green>Sent to Discord.</green>"
+no_permission = "<red>You do not have permission to do that.</red>"
+players_only = "<red>Only players can do that.</red>"
+help = "<aqua>Ace SRV</aqua> <gray>· /discord [link | unlink | linked | reload | broadcast <message>]</gray>"
+
+# ── Discord announcements for game events ──────────────────────────────────────
+# content: plain message text. embed: a rich embed. webhook: post as a webhook with a custom name and avatar.
+# Placeholders: %username% %displayname% %uuid% %embedavatarurl% %botname% %botavatarurl% and, per event,
+# %deathmessage% or %advancement%.
+
+[join]
+enabled = true
+content = ""
+webhook = { enabled = false, name = "%botname%", avatar_url = "%botavatarurl%" }
+embed = { enabled = true, color = "#00ff00", author_name = "%username% joined the server", author_image = "%embedavatarurl%", author_url = "", title = "", title_url = "", description = "", thumbnail = "", image = "", footer_text = "", footer_icon = "", timestamp = false }
+
+[first_join]
+enabled = true
+content = ""
+webhook = { enabled = false, name = "%botname%", avatar_url = "%botavatarurl%" }
+embed = { enabled = true, color = "#ffd700", author_name = "%username% joined the server for the first time", author_image = "%embedavatarurl%", author_url = "", title = "", title_url = "", description = "", thumbnail = "", image = "", footer_text = "", footer_icon = "", timestamp = false }
+
+[leave]
+enabled = true
+content = ""
+webhook = { enabled = false, name = "%botname%", avatar_url = "%botavatarurl%" }
+embed = { enabled = true, color = "#ff0000", author_name = "%username% left the server", author_image = "%embedavatarurl%", author_url = "", title = "", title_url = "", description = "", thumbnail = "", image = "", footer_text = "", footer_icon = "", timestamp = false }
+
+[death]
+enabled = true
+content = ""
+webhook = { enabled = false, name = "%botname%", avatar_url = "%botavatarurl%" }
+embed = { enabled = true, color = "#000000", author_name = "%deathmessage%", author_image = "%embedavatarurl%", author_url = "", title = "", title_url = "", description = "", thumbnail = "", image = "", footer_text = "", footer_icon = "", timestamp = false }
+
+[advancement]
+enabled = true
+content = ""
+webhook = { enabled = false, name = "%botname%", avatar_url = "%botavatarurl%" }
+embed = { enabled = true, color = "#ffd700", author_name = "%username% made the advancement %advancement%", author_image = "%embedavatarurl%", author_url = "", title = "", title_url = "", description = "", thumbnail = "", image = "", footer_text = "", footer_icon = "", timestamp = false }

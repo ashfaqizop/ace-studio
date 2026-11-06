@@ -55,7 +55,7 @@ function header(p: Plugin): string {
         </m3e-icon-button>
       </m3e-split-button>
       <m3e-menu id="ver-menu">
-        ${p.versions.map((x) => `<m3e-menu-item href="${esc(assetUrl(p.slug, x.version, x.file))}" target="_blank">${icon('deployed_code', { slot: 'icon' })}v${esc(x.version)} · ${esc(bytes(x.size))}</m3e-menu-item>`).join('')}
+        ${p.versions.map((x) => `<m3e-menu-item href="${esc(assetUrl(p.slug, x.version, x.file))}" target="_blank">${icon('deployed_code', { slot: 'icon' })}v${esc(x.version)}</m3e-menu-item>`).join('')}
       </m3e-menu>
       <div class="p-actions-row">
         ${favButton(p.slug, 'tonal')}
@@ -100,7 +100,7 @@ function tabs(p: Plugin): string {
           <div class="ver-body">
             <div class="prose">${md(v.changelog)}</div>
             <div class="ver-file">
-              ${icon('deployed_code')}<code>${esc(v.file)}</code><span class="muted">${bytes(v.size)}</span><span class="muted" data-dl-file="${esc(v.file)}"></span>
+              ${icon('deployed_code')}<code>${esc(v.file)}</code><span class="muted" data-size-file="${esc(v.file)}">${bytes(v.size)}</span><span class="muted" data-dl-file="${esc(v.file)}"></span>
               <m3e-button variant="tonal" href="${esc(assetUrl(p.slug, v.version, v.file))}" target="_blank" rel="noopener">${icon('download', { slot: 'icon' })}Download</m3e-button>
             </div>
           </div>
@@ -164,7 +164,7 @@ function aside(p: Plugin): string {
           <dt><span class="dt-logo">${logo()}</span>Pumpkin</dt><dd>${esc(v.pumpkin)}</dd>
           <dt>${icon('sports_esports')}Minecraft</dt><dd>${esc(v.minecraft)}</dd>
           <dt>${brand('webassembly', { size: 16, tint: true })}Runtime</dt><dd>WASM component</dd>
-          <dt>${icon('sd_card')}Size</dt><dd>${bytes(v.size)}</dd>
+          <dt>${icon('sd_card')}Size</dt><dd data-size-file="${esc(v.file)}">${bytes(v.size)}</dd>
         </dl>
         <m3e-form-field variant="outlined" class="aside-server">
           <label slot="label" for="p-server">My server</label>

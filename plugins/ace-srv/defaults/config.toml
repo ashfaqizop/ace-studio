@@ -1,0 +1,122 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  Ace SRV: Discord ⇄ Minecraft bridge for Pumpkin (port of DiscordSRV)
+#  plugins/data/ace-srv/config.toml · reload with /discord reload
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Bot token from https://discord.com/developers/applications → Bot.
+# Prefer keeping it out of this file: set ACE_SRV_BOT_TOKEN in pumpkin.toml instead:
+#   [plugins.overrides."ace-srv".environment]
+#   ACE_SRV_BOT_TOKEN = "..."
+# In the developer portal, enable the MESSAGE CONTENT privileged intent for the bot.
+bot_token = "BOTTOKEN"
+
+# Guild (server) id. Leave empty to use the first guild the bot is in.
+guild_id = ""
+
+# Discord invite shown by /discord
+invite_link = "https://discord.gg/changethisintheconfig"
+
+# Avatar used for players in webhooks and embeds. {uuid}, {username} and {size} are filled in.
+avatar_url = "https://mc-heads.net/avatar/{uuid}/{size}"
+
+# Log extra detail (gateway payloads, HTTP status codes) to the console.
+debug = false
+
+# Game channel → Discord channel id. Pumpkin has one chat, so "global" is the one that matters.
+[channels]
+global = "000000000000000000"
+
+[console]
+# Messages in this channel run as console commands, and server activity is mirrored here. Empty to disable.
+channel_id = ""
+refresh_seconds = 5
+use_code_blocks = true
+block_bots = true
+# Commands that cannot be run from Discord (first word). Set blacklist_is_whitelist to only allow these instead.
+blacklist = ["?", "op", "deop", "execute"]
+blacklist_is_whitelist = false
+# Log of every command run from Discord, in the data folder. %date% is filled in. Empty to disable.
+usage_log = "console-%date%.log"
+
+[presence]
+enabled = true
+# "playing", "watching", "listening", "competing" or "custom", then the text. %online% and %max% are filled in.
+statuses = ["playing Minecraft", "watching %online%/%max% players"]
+# online, idle, dnd or invisible
+online_status = "online"
+rotate_minutes = 2
+
+[chat]
+discord_to_minecraft = true
+minecraft_to_discord = true
+truncate_length = 256
+# Turn @name in game into a real Discord mention for known members, and <@id> from Discord into @name in game.
+translate_mentions = true
+# Custom emotes (<:pumpkin:123>) become :pumpkin:. Unicode emoji: "show" or "hide".
+emoji = "show"
+# Only relay Discord messages starting with this prefix (empty: relay everything).
+prefix_required = ""
+# When true, messages starting with the prefix are the ones NOT relayed.
+prefix_blacklist = false
+# Roles whose members may use & colour codes in Discord messages shown in game.
+color_code_roles = ["Developer", "Owner", "Admin", "Moderator"]
+broadcast_to_console = true
+# Only relay Discord messages from members who linked their Minecraft account.
+require_linked = false
+block_bots = false
+block_webhooks = true
+blocked_ids = []
+blocked_roles = []
+blocked_roles_whitelist = false
+# Roles shown next to Discord names in game. Empty: all roles. Set role_selection_whitelist to show only these.
+role_selection = []
+role_selection_whitelist = false
+# Send game chat through a webhook with each player's name and head instead of the bot.
+webhook_delivery = false
+
+# Role name → shorter name shown in game
+[chat.role_aliases]
+Developer = "Dev"
+
+# Regex → replacement, applied to game chat before it goes to Discord
+[chat.game_filters]
+
+# Regex → replacement, applied to Discord messages before they reach the game
+[chat.discord_filters]
+
+# Exact message in the chat channel → the bot's reply
+[chat.canned_responses]
+"!ip" = "play.example.com"
+"!site" = "https://example.com"
+
+[chat.console_command]
+enabled = true
+prefix = "!c"
+roles_allowed = ["Owner", "Developer"]
+whitelist = ["say", "list", "tps"]
+whitelist_bypass_roles = ["Owner", "Developer"]
+whitelist_is_blacklist = false
+# Seconds before the command message is deleted (0: keep)
+expiration = 0
+
+[chat.player_list]
+enabled = true
+trigger = "playerlist"
+# Seconds before the reply (and the request, if delete_request) is deleted. 0: keep.
+expiration = 10
+delete_request = true
+
+[topic]
+enabled = true
+# Discord allows two topic edits per channel every ten minutes.
+rate_minutes = 10
+at_shutdown = true
+
+[linking]
+# Name of a Discord role given to members who link their account (empty: none).
+linked_role = "Linked"
+allow_relink = false
+code_expiry_minutes = 10
+# Console commands run on link / unlink. %name%, %uuid%, %discordname% and %discordid% are filled in.
+linked_commands = []
+unlinked_commands = []

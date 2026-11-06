@@ -1,0 +1,48 @@
+{
+  "slug": "ace-srv",
+  "name": "Ace SRV",
+  "summary": "Bridge your Pumpkin server and Discord: two-way chat, join and death embeds, a console channel and account linking.",
+  "description": "## Your server, in your Discord\n\nAce SRV is a translation of **DiscordSRV** for Pumpkin. It connects one Discord bot to your server and keeps both sides talking.\n\n- **Two-way chat** with role colours, role aliases, replies, mentions, custom emotes and clickable attachments\n- **Announcements** for joins, first joins, leaves, deaths and advancements, as embeds or as webhooks with each player's head\n- **Start and stop messages**, live channel topics and a rotating bot status\n- **Console channel**: run console commands from Discord and watch chat, joins and commands mirrored back\n- **`!c <command>`** for chosen roles, a `playerlist` reply that cleans itself up, and canned answers like `!ip`\n- **Account linking**: `/discord link` gives a 4-digit code to DM the bot, with a *Linked* role and link/unlink commands\n\n## Setup\n\n1. Create a bot in the Discord developer portal and enable the **Message Content** intent.\n2. Drop the `.wasm` into `plugins/`, start the server and approve its permissions in the console.\n3. Keep the token out of plugin files by putting it in `pumpkin.toml`:\n\n```toml\n[plugins.overrides.\"ace-srv\".environment]\nACE_SRV_BOT_TOKEN = \"your-bot-token\"\n```\n\n4. Set `channels.global` in `plugins/data/ace-srv/config.toml` and run `/discord reload`.\n\n## Commands\n\n| Command | Who |\n| --- | --- |\n| `/discord` | everyone |\n| `/discord link` · `unlink` · `linked` | everyone |\n| `/discord reload` · `broadcast <message>` | op level 2 |\n\n## Not ported (yet)\n\nRaw console log streaming (Pumpkin plugins can't read the log), group ↔ role sync, the voice module, the watchdog and hooks into Bukkit-only plugins.",
+  "categories": ["chat", "social", "admin"],
+  "icon": { "shape": "soft-burst", "symbol": "forum" },
+  "license": "GPL-3.0",
+  "original": {
+    "name": "DiscordSRV",
+    "author": "Scarsz & DiscordSRV contributors",
+    "url": "https://modrinth.com/plugin/discordsrv",
+    "license": "GPL-3.0"
+  },
+  "portedBy": "claude/forge",
+  "featured": true,
+  "permissions": [
+    { "id": "fs.write.data", "why": "Writes its config, messages, linked accounts and the console usage log in its own data folder." },
+    { "id": "fs.read.data", "why": "Reads those same files back on start and on /discord reload." },
+    { "id": "http.outbound", "why": "Talks to the Discord REST API: sends messages, embeds, webhooks, reactions and topic updates." },
+    { "id": "network.dns", "why": "Looks up Discord's gateway host name." },
+    { "id": "network.tcp.connect", "why": "Holds one TLS WebSocket to the Discord gateway to receive messages in real time." }
+  ],
+  "mapping": [
+    { "from": "AsyncPlayerChatEvent", "to": "PlayerChatEvent", "note": "Non-blocking listener; cancelled chat is never relayed." },
+    { "from": "PlayerJoinEvent / PlayerQuitEvent", "to": "PlayerJoinEvent / PlayerLeaveEvent" },
+    { "from": "PlayerDeathEvent", "to": "PlayerDeathEvent", "note": "Death message rendered from its text component." },
+    { "from": "PlayerAdvancementDoneEvent", "to": "PlayerAdvancementDoneEvent", "note": "Only advancements that announce to chat." },
+    { "from": "ServerCommandEvent", "to": "ServerCommandEvent", "note": "Mirrored to the console channel." },
+    { "from": "JDA (gateway + REST)", "to": "WASI socket + rustls + tungstenite, wasi:http", "note": "Non-blocking, pumped once per tick." },
+    { "from": "BukkitScheduler", "to": "schedule_repeating_task", "note": "One task drives the whole bridge." },
+    { "from": "config.yml / messages.yml", "to": "config.toml / messages.toml", "note": "Missing keys fall back to defaults." },
+    { "from": "Console log appender", "to": "Activity mirror", "note": "Pumpkin plugins can't read the server log." },
+    { "from": "Vault / LuckPerms groups", "to": "Not ported", "note": "Pumpkin has no permission groups yet." }
+  ],
+  "versions": [
+    {
+      "version": "0.1.0",
+      "date": "2026-11-06",
+      "pumpkin": "0.2.1",
+      "minecraft": "26.3",
+      "file": "ace-srv-0.1.0.wasm",
+      "size": 0,
+      "channel": "beta",
+      "changelog": "- First Pumpkin release: two-way chat, event embeds, webhooks, console channel, `!c`, player list, canned replies, presence, topics and account linking"
+    }
+  ]
+}

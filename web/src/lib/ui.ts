@@ -2,8 +2,8 @@ import { M3eSnackbar } from '@m3e/web/snackbar';
 import { buddySay } from '../components/buddy';
 import { toggleFavorite, toggleCompare, MAX_COMPARE } from './prefs';
 import { pluginBySlug, PLUGINS } from '../data/plugins';
-import { assetDownloads } from './github';
-import { num } from './html';
+import { assetDownloads, assetSizes } from './github';
+import { bytes, num } from './html';
 
 export function toast(message: string): void {
   M3eSnackbar.open(message, true, { duration: 3200 });
@@ -144,6 +144,10 @@ export function applyDownloads(root: ParentNode = document): void {
   root.querySelectorAll<HTMLElement>('[data-dl-file]').forEach((el) => {
     const n = live!.get(el.dataset.dlFile!);
     if (n != null) el.textContent = `${num(n)} downloads`;
+  });
+  root.querySelectorAll<HTMLElement>('[data-size-file]').forEach((el) => {
+    const n = assetSizes.get(el.dataset.sizeFile!);
+    if (n) el.textContent = bytes(n);
   });
 }
 

@@ -1,0 +1,36 @@
+# Builds every port on each push/PR that touches plugins/. The .wasm files are attached to the run as an artifact.
+name: plugins
+
+on:
+  push:
+    branches: [main]
+    paths: ["plugins/**", "web/src/data/ports/**", ".github/workflows/plugins*.yml"]
+  pull_request:
+    paths: ["plugins/**", "web/src/data/ports/**", ".github/workflows/plugins*.yml"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    uses: ./.github/workflows/plugins-build.yml
+
+  # The site reads committed copies of each plugins/<id>/ace.json (Vercel only sees web/). Keep them identical.
+  manifests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Manifests are valid and synced to the site
+        run: |
+          status=0
+          for manifest in plugins/*/ace.json; do
+            id=$(basename "$(dirname "$manifest")")
+            jq -e --arg id "$id" '.slug == $id and (.versions | length > 0)' "$manifest" > /dev/null \
+              || { echo "::error file=$manifest::slug must be \"$id\" and versions must not be empty"; status=1; }
+            version=$(grep -m1 '^version' "plugins/$id/Cargo.toml" | cut -d'"' -f2)
+            jq -e --arg v "$version" '.versions[0].version == $v' "$manifest" > /dev/null \
+              || { echo "::error file=$manifest::versions[0].version must match Cargo.toml ($version)"; status=1; }
+            if ! cmp -s "$manifest" "web/src/data/ports/$id.json"; then
+              echo "::error file=$manifest::web/src/data/ports/$id.json is out of date; run npm run dev or npm run build in web/ and commit it"
+              status=1
+            fi
+          done
+          exit $status

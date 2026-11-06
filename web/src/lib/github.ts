@@ -116,13 +116,20 @@ export async function portRequests(): Promise<PortRequest[]> {
 
 interface RawRelease {
   tag_name: string;
-  assets: { name: string; download_count: number }[];
+  assets: { name: string; download_count: number; size: number }[];
 }
+
+/** Release asset file name → size in bytes, filled by assetDownloads() (manifests can't know it before CI builds). */
+export const assetSizes = new Map<string, number>();
 
 /** Map of release asset file name → download count. */
 export async function assetDownloads(): Promise<Map<string, number>> {
   const raw = await cached<RawRelease[]>('releases', `${API}/releases?per_page=100`);
   const map = new Map<string, number>();
-  for (const r of raw) for (const a of r.assets) map.set(a.name, (map.get(a.name) ?? 0) + a.download_count);
+  for (const r of raw)
+    for (const a of r.assets) {
+      map.set(a.name, (map.get(a.name) ?? 0) + a.download_count);
+      if (a.size) assetSizes.set(a.name, a.size);
+    }
   return map;
 }

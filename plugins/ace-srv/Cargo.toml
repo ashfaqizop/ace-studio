@@ -1,0 +1,24 @@
+[package]
+name = "ace-srv"
+version = "0.1.0"
+description = "Ace SRV: a Discord to Minecraft chat bridge for Pumpkin, ported from DiscordSRV"
+license = "GPL-3.0-or-later"
+edition.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+pumpkin-plugin-api.workspace = true
+tracing.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+toml.workspace = true
+wasi.workspace = true
+regex = "1"
+# Discord gateway: TLS and WebSocket run inside the sandbox over a WASI TCP socket
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+webpki-roots = "1"
+tungstenite = { version = "0.27", default-features = false, features = ["handshake"] }

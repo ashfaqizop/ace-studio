@@ -17,3 +17,9 @@ web/scripts/out/
 
 # local-only demo data (served by vite dev, never built or committed)
 web/src/data/*.local.ts
+
+# reference sources (never committed)
+.cache/
+
+# cargo output (CI only)
+target/

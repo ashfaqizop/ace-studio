@@ -45,34 +45,23 @@ export const CATEGORIES: Record<string, { label: string; icon: string }> = {
   performance: { label: 'Performance', icon: 'speed' },
 };
 
-/**
- * The catalog. Add one entry per shipped port; the site builds every page from this list.
- * Builds are attached to GitHub releases tagged `<slug>-v<version>` (see config.ts).
- *
- * Example entry:
- *
- *   {
- *     slug: 'my-port',
- *     name: 'My Port',
- *     summary: 'One line about what it does.',
- *     description: '## Markdown
+/** A port's `ace.json`: the catalog entry, minus the live numbers. */
+export type PortManifest = Omit<Plugin, 'downloads' | 'followers'> & { downloads?: number; followers?: number };
 
-Shown on the Overview tab.',
- *     categories: ['utility'],
- *     icon: { shape: 'sunny', symbol: 'extension' },          // any m3e-shape + Material Symbol
- *     license: 'MIT',
- *     original: { name: 'Original Plugin', author: 'author', url: 'https://modrinth.com/plugin/original', license: 'MIT' },
- *     portedBy: 'claude/forge',
- *     downloads: 0,
- *     followers: 0,
- *     permissions: [{ id: 'fs:read:data', why: 'Reads its config.' }],
- *     mapping: [{ from: 'PlayerJoinEvent', to: 'PlayerJoinEvent' }],
- *     versions: [{ version: '1.0.0', date: '2026-11-06', pumpkin: '0.2.1', minecraft: '1.21.11',
- *                  file: 'my-port-1.0.0.wasm', size: 0, changelog: '- First Pumpkin release' }],
- *   },
+/**
+ * The catalog. Each port describes itself in `plugins/<slug>/ace.json`; vite.config.ts copies those into
+ * `./ports/<slug>.json` (committed, since Vercel only sees web/), and every page is built from this list.
+ * Builds are attached to GitHub releases tagged `<slug>-v<version>` (see config.ts); download counts and file
+ * sizes are filled in live from those releases.
  */
+const manifests = import.meta.glob<PortManifest>('./ports/*.json', { eager: true, import: 'default' });
+
+const PORTS: Plugin[] = Object.values(manifests)
+  .map((m) => ({ downloads: 0, followers: 0, ...m }))
+  .sort((a, b) => b.versions[0].date.localeCompare(a.versions[0].date));
+
 export const PLUGINS: Plugin[] = [
-  // real ports go here
+  ...PORTS,
   ...demoPlugins, // dev-only demo entries (empty in production)
 ];
 

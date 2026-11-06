@@ -1,0 +1,24 @@
+[workspace]
+resolver = "3"
+members = ["ace-srv"]
+
+[workspace.package]
+edition = "2024"
+repository = "https://github.com/ashfaqizop/ace-studio"
+authors = ["Ace Studio"]
+
+[workspace.dependencies]
+# Plugin API v0.1. The crate is not published in a usable form, so it comes from git, pinned for reproducible builds.
+pumpkin-plugin-api = { git = "https://github.com/Pumpkin-MC/Pumpkin", rev = "6361843f5d9029b0cf7ecd6b1f2e86ace1256934", package = "pumpkin-plugin-api" }
+tracing = "0.1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.9"
+wasi = "0.14"
+
+[profile.release]
+lto = true
+opt-level = "s"
+codegen-units = 1
+strip = true
+panic = "abort"
