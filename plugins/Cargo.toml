@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["ace-srv"]
+members = ["ace-srv", "ace-plasmo"]
 
 [workspace.package]
 edition = "2024"

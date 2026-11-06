@@ -1,0 +1,47 @@
+# Ace Plasmo: proximity voice chat for Pumpkin, compatible with the Plasmo Voice client mod (2.x).
+# Players need Plasmo Voice installed: https://modrinth.com/plugin/plasmo-voice
+
+# Stored on the client to keep per-server settings. Give several servers the same id to share them.
+server_id = "__SERVER_ID__"
+
+[host]
+# Address the UDP voice server binds to. 0.0.0.0 = every interface.
+ip = "0.0.0.0"
+# UDP port for voice. Plasmo Voice uses the Minecraft port by default (UDP and TCP don't clash),
+# so this is 25565. Open it for UDP in your firewall or router.
+port = 25565
+
+# Where clients connect, if it differs from the bind address (NAT, Docker, a tunnel).
+# ip = "0.0.0.0" means "the address the player joined the Minecraft server with".
+# [host.public]
+# ip = "203.0.113.10"
+# port = 25565
+
+[voice]
+# Supported: 8000, 12000, 24000, 48000. Lower the Opus bitrate to save bandwidth instead.
+sample_rate = 48000
+# Largest voice packet, in bytes (128-5000).
+mtu_size = 1024
+# A client is reconnected after this long without UDP traffic (1000-120000 ms).
+keep_alive_timeout_ms = 15000
+# Audio is sent to players within min(distance + this, 2 x distance) blocks, so it fades out instead of cutting off.
+max_extra_audio_broadcast_distance = 16
+# Older clients aren't connected; they get a message asking them to update.
+client_mod_min_version = "2.0.0"
+
+[voice.proximity]
+# Distances players can pick (blocks). [-1, 64] means "anything from 1 to 64".
+distances = [8, 16, 32]
+default_distance = 16
+
+[voice.opus]
+# VOIP, AUDIO or RESTRICTED_LOWDELAY
+mode = "VOIP"
+# -1000 = auto, -1 = max, or 500-512000 bits/s
+bitrate = -1000
+
+[voice.player_icon]
+# Icons to hide above heads: HIDE_NOT_INSTALLED, HIDE_VOICE_CHAT_DISABLED, HIDE_SERVER_MUTED,
+# HIDE_CLIENT_MUTED, HIDE_SOURCE_ICON. Empty shows them all.
+visibility = []
+y_offset = 0.0

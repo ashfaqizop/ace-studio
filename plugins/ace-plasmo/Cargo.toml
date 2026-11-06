@@ -1,0 +1,23 @@
+[package]
+name = "ace-plasmo"
+version = "0.1.0"
+description = "Ace Plasmo: proximity voice chat for Pumpkin and the Plasmo Voice client mod, ported from Plasmo Voice"
+license = "LGPL-3.0-only"
+edition.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+pumpkin-plugin-api.workspace = true
+tracing.workspace = true
+serde.workspace = true
+toml.workspace = true
+# hands each client the voice key, RSA-encrypted with the public key it sent (Java "RSA" = PKCS#1 v1.5)
+rsa = { version = "0.9", default-features = false, features = ["std", "u64_digit"] }
+rand_core = { version = "0.6", features = ["getrandom"] }
+
+[dev-dependencies]
+md-5 = "0.10"

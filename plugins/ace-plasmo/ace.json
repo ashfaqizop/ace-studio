@@ -1,0 +1,44 @@
+{
+  "slug": "ace-plasmo",
+  "name": "Ace Plasmo",
+  "summary": "Proximity voice chat for Pumpkin. Players with the Plasmo Voice mod hear whoever is nearby, fading with distance.",
+  "description": "## Talk to whoever is nearby\n\nAce Plasmo is a Pumpkin port of the server side of **Plasmo Voice** by the Plasmo team. Players install the regular [Plasmo Voice](https://modrinth.com/plugin/plasmo-voice) client mod (2.x), join your Pumpkin server, and talk: voices come from the player who's speaking and fade out with distance.\n\n- **Proximity voice** with the distances you choose (8, 16 and 32 blocks by default), picked per player in the mod's menu\n- **Push-to-talk or voice activation**, mic and speaker mutes, and volume per player, all handled by the client mod\n- **Talking icons** above heads, and the distance sphere when a player changes range\n- **Encrypted audio**: clients get the voice key over an RSA-encrypted handshake, and the server forwards audio without decoding it\n- **`/vlist`** shows who has voice chat, **`/vrc`** reconnects you\n\n## Setup\n\n1. Allow the plugin's permissions in `pumpkin.toml` (see the Install tab).\n2. Open **UDP port 25565** (or whatever `host.port` is in `config.toml`) in your firewall or router. Voice uses UDP next to the game's TCP port.\n3. Behind NAT, Docker or a tunnel, set `[host.public]` to the address players can reach.\n\n## Not in this version\n\nServer mutes (`/vmute`), groups and other add-ons, and proxy (Velocity/BungeeCord) support come in later releases.",
+  "categories": ["chat", "social"],
+  "icon": { "shape": "pill", "symbol": "record_voice_over" },
+  "license": "LGPL-3.0-only",
+  "original": {
+    "name": "Plasmo Voice",
+    "author": "Apehum, KPidS & Plasmo team",
+    "url": "https://modrinth.com/plugin/plasmo-voice",
+    "license": "LGPL-3.0-only"
+  },
+  "portedBy": "claude/forge",
+  "permissions": [
+    { "id": "fs.write.data", "why": "Creates config.toml in its data folder the first time it starts." },
+    { "id": "fs.read.data", "why": "Reads config.toml on start." },
+    { "id": "network.udp", "why": "Runs the voice server: binds the UDP voice port and sends and receives audio with each player's client mod." }
+  ],
+  "mapping": [
+    { "from": "McServerChannelManager (plasmo:voice/v2)", "to": "PlayerCustomPayloadEvent + java-player.send-custom-payload", "note": "The handshake and voice state travel on the same plugin channel as upstream." },
+    { "from": "NettyUdpServer", "to": "std::net::UdpSocket (wasi:sockets)", "note": "Non-blocking socket, drained every server tick." },
+    { "from": "Cipher RSA/ECB/PKCS1Padding", "to": "rsa crate (PKCS#1 v1.5)", "note": "Encrypts the 16-byte AES voice key with the client's public key." },
+    { "from": "PlayerInfoRequestScheduler", "to": "tick loop", "note": "Same retry schedule: 1, 3, 5, 10 and 15 seconds." },
+    { "from": "ProximityServerActivationHelper", "to": "voice::on_audio", "note": "Same reach rule: min(distance + extra, 2 x distance), same world." },
+    { "from": "NettyUdpKeepAlive", "to": "tick loop", "note": "Pings every 2.5-4 s with jitter, reconnects after keep_alive_timeout_ms." },
+    { "from": "McPlayer#getServerPosition", "to": "player.get-position / get-world", "note": "Read once per tick, outside the state lock." },
+    { "from": "VoiceMuteManager, /vmute", "to": "Not yet", "note": "Mutes need persistent storage and timers; planned for a later version." },
+    { "from": "Addons (groups, broadcast…)", "to": "Not ported", "note": "Plasmo add-ons are Java plugins; they'd each be their own port." }
+  ],
+  "versions": [
+    {
+      "version": "0.1.0",
+      "date": "2026-11-06",
+      "pumpkin": "0.2.1",
+      "minecraft": "26.3",
+      "file": "ace-plasmo-0.1.0.wasm",
+      "size": 0,
+      "channel": "beta",
+      "changelog": "- First Pumpkin release: proximity voice with the Plasmo Voice 2.x client mod, encrypted handshake, keep-alives and reconnects, `/vlist` and `/vrc`"
+    }
+  ]
+}
